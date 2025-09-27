@@ -1,0 +1,37 @@
+{
+  "projectName": "My Kadena dApp",
+  "description": "A multi-chain dApp built on Kadena Chainweb EVM",
+  "author": "Your Name",
+  "version": "1.0.0",
+  
+  "deployment": {
+    "deployToChains": [20, 21, 22, 23, 24],
+    "gasSettings": {
+      "gasLimit": 5000000,
+      "gasPrice": "20000000000"
+    },
+    "confirmations": 2
+  },
+
+  "contracts": {
+    "SimpleStorage": {
+      "constructorArgs": [],
+      "deployToChains": [20, 21, 22, 23, 24],
+      "verify": true
+    }
+  },
+
+  "frontend": {
+    "defaultChain": 20,
+    "enabledFeatures": {
+      "crossChainTransfers": true,
+      "multiChainBalances": true,
+      "contractInteraction": true
+    }
+  },
+
+  "wallet": {
+    "requiredNetworks": [5920, 5921, 5922, 5923, 5924],
+    "autoAddNetworks": true
+  }
+}
