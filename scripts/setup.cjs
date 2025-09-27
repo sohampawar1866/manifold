@@ -32,18 +32,69 @@ const config = {
   functionSelectionMode: ''
 }
 
-// Available function templates
+// Available function templates with contract requirements
 const coreFunctions = [
-  { name: 'crossChainTransfer', description: 'Transfer tokens between selected chains' },
-  { name: 'multiChainDeploy', description: 'Deploy contracts across multiple chains' },
-  { name: 'getChainBalances', description: 'Get balances across all selected chains' }
+  { 
+    name: 'crossChainTransfer',
+    description: 'Transfer tokens between selected chains',
+    contractRequired: true,
+    contracts: {
+      bridge: 'process.env.BRIDGE_CONTRACT_${chain}',
+      token: 'process.env.TOKEN_CONTRACT_${chain}'
+    }
+  },
+  {
+    name: 'multiChainDeploy',
+    description: 'Deploy contracts across multiple chains',
+    contractRequired: false
+  },
+  {
+    name: 'getChainBalances',
+    description: 'Get balances across all selected chains',
+    contractRequired: true,
+    contracts: {
+      token: 'process.env.TOKEN_CONTRACT_${chain}'
+    }
+  }
 ]
 
 const defiFunctions = [
-  { name: 'addLiquidityMultiChain', description: 'Add liquidity across multiple chains' },
-  { name: 'executeArbitrage', description: 'Execute arbitrage opportunities' },
-  { name: 'crossChainYieldFarm', description: 'Yield farming across chains' },
-  { name: 'multiChainLending', description: 'Multi-chain lending operations' }
+  {
+    name: 'addLiquidityMultiChain',
+    description: 'Add liquidity across multiple chains',
+    contractRequired: true,
+    contracts: {
+      defi: 'process.env.DEFI_CONTRACT_${chain}',
+      token: 'process.env.TOKEN_CONTRACT_${chain}'
+    }
+  },
+  {
+    name: 'executeArbitrage',
+    description: 'Execute arbitrage opportunities',
+    contractRequired: true,
+    contracts: {
+      router: 'process.env.ROUTER_CONTRACT_${chain}',
+      defi: 'process.env.DEFI_CONTRACT_${chain}'
+    }
+  },
+  {
+    name: 'crossChainYieldFarm',
+    description: 'Yield farming across chains',
+    contractRequired: true,
+    contracts: {
+      defi: 'process.env.DEFI_CONTRACT_${chain}',
+      token: 'process.env.TOKEN_CONTRACT_${chain}'
+    }
+  },
+  {
+    name: 'multiChainLending',
+    description: 'Multi-chain lending operations',
+    contractRequired: true,
+    contracts: {
+      defi: 'process.env.DEFI_CONTRACT_${chain}',
+      token: 'process.env.TOKEN_CONTRACT_${chain}'
+    }
+  }
 ]
 
 const gamingFunctions = [
@@ -584,8 +635,6 @@ function App() {
     balance,
     isConnecting 
   } = useWallet()
-
-  const [filteredFunctions, setFilteredFunctions] = useState([])
 
   useEffect(() => {
     // Load configuration and initialize app
@@ -1388,23 +1437,26 @@ const KADENA_NETWORKS = {
   20: {
     chainId: '0x1720', // 5920 in hex
     chainName: 'Kadena Chainweb EVM Chain 20',
-    rpcUrls: ['https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/20/evm/rpc'],
+    rpcUrls: ['https://erpc.testnet.chainweb.com/chain-20'],
+    wsRpcUrls: ['wss://erpc.testnet.chainweb.com/chain-20'],
     nativeCurrency: { name: 'KDA', symbol: 'KDA', decimals: 18 },
-    blockExplorerUrls: ['http://chain-20.evm-testnet-blockscout.chainweb.com/']
+    blockExplorerUrls: ['https://explorer.testnet.chainweb.com/chain-20']
   },
   21: {
     chainId: '0x1721', // 5921 in hex
     chainName: 'Kadena Chainweb EVM Chain 21',
-    rpcUrls: ['https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/21/evm/rpc'],
+    rpcUrls: ['https://erpc.testnet.chainweb.com/chain-21'],
+    wsRpcUrls: ['wss://erpc.testnet.chainweb.com/chain-21'],
     nativeCurrency: { name: 'KDA', symbol: 'KDA', decimals: 18 },
-    blockExplorerUrls: ['http://chain-21.evm-testnet-blockscout.chainweb.com/']
+    blockExplorerUrls: ['https://explorer.testnet.chainweb.com/chain-21']
   },
   22: {
     chainId: '0x1722', // 5922 in hex
     chainName: 'Kadena Chainweb EVM Chain 22',
-    rpcUrls: ['https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/22/evm/rpc'],
+    rpcUrls: ['https://erpc.testnet.chainweb.com/chain-22'],
+    wsRpcUrls: ['wss://erpc.testnet.chainweb.com/chain-22'],
     nativeCurrency: { name: 'KDA', symbol: 'KDA', decimals: 18 },
-    blockExplorerUrls: ['http://chain-22.evm-testnet-blockscout.chainweb.com/']
+    blockExplorerUrls: ['https://explorer.testnet.chainweb.com/chain-22']
   },
   23: {
     chainId: '0x1723', // 5923 in hex
@@ -1799,12 +1851,45 @@ import { ethers } from 'ethers'
 import { NetworkManager } from './networkManager'
 import toast from 'react-hot-toast'
 
-// REAL WORKING FUNCTIONS - These actually connect to Kadena Chainweb EVM
+// Kadena Chainweb EVM Network Configuration
+const KADENA_NETWORKS = {
+  20: {
+    chainId: 5920,
+    rpcUrl: 'https://erpc.testnet.chainweb.com/chain-20',
+    wsRpc: 'wss://erpc.testnet.chainweb.com/chain-20',
+    name: 'Chain 20',
+    explorer: 'https://explorer.testnet.chainweb.com/chain-20',
+    contracts: {
+      bridge: process.env.BRIDGE_CONTRACT_20,
+      router: process.env.ROUTER_CONTRACT_20
+    }
+  },
+  21: {
+    chainId: 5921,
+    rpcUrl: 'https://erpc.testnet.chainweb.com/chain-21',
+    wsRpc: 'wss://erpc.testnet.chainweb.com/chain-21',
+    name: 'Chain 21',
+    explorer: 'https://explorer.testnet.chainweb.com/chain-21',
+    contracts: {
+      bridge: process.env.BRIDGE_CONTRACT_21,
+      router: process.env.ROUTER_CONTRACT_21
+    }
+  },
+  22: {
+    chainId: 5922,
+    rpcUrl: 'https://erpc.testnet.chainweb.com/chain-22',
+    wsRpc: 'wss://erpc.testnet.chainweb.com/chain-22',
+    name: 'Chain 22',
+    explorer: 'https://explorer.testnet.chainweb.com/chain-22',
+    contracts: {
+      bridge: process.env.BRIDGE_CONTRACT_22,
+      router: process.env.ROUTER_CONTRACT_22
+    }
+  }
+}
 
 export async function crossChainTransfer(fromChain, toChain, amount, recipient, signer) {
   console.log('🔄 crossChainTransfer called with:', { fromChain, toChain, amount, recipient, signer: !!signer })
-  
-  const networkManager = new NetworkManager()
   
   if (!signer) {
     throw new Error('Wallet not connected. Please connect your wallet first.')
