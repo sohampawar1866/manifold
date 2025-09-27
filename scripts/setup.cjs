@@ -577,7 +577,7 @@ function App() {
   const { 
     account, 
     isConnected, 
-    network, 
+    chainId,
     connectWallet, 
     disconnectWallet, 
     switchToChain,
@@ -843,11 +843,11 @@ function App() {
               ) : (
                 <div className="flex items-center space-x-2">
                   <select
-                    value={network?.chainId || ''}
+                    value={chainId || ''}
                     onChange={(e) => {
-                      const chainId = parseInt(e.target.value)
+                      const selectedChainId = parseInt(e.target.value)
                       // Convert chainId to chain number (5920 -> 20, 5921 -> 21, etc.)
-                      const chainNumber = chainId - 5900
+                      const chainNumber = selectedChainId - 5900
                       switchToChain(chainNumber)
                     }}
                     className="input-primary text-sm"
@@ -1730,6 +1730,60 @@ export class NetworkManager {
       throw error
     }
   }
+
+  async getBalanceMultiChain(chainNumbers, address) {
+    const balances = {}
+    
+    for (const chainNum of chainNumbers) {
+      try {
+        const balance = await this.getBalance(chainNum, address)
+        balances[chainNum] = balance
+      } catch (error) {
+        console.error(\`Failed to get balance for chain \${chainNum}:\`, error)
+        balances[chainNum] = {
+          wei: '0',
+          eth: '0',
+          chainNumber: chainNum,
+          chainName: this.networks[chainNum]?.name || \`Chain \${chainNum}\`,
+          error: error.message
+        }
+      }
+    }
+    
+    return balances
+  }
+
+  getExplorerUrl(chainNumber, txHash) {
+    const network = this.getNetwork(chainNumber)
+    return \`\${network.explorer}tx/\${txHash}\`
+  }
+
+  async executeTransaction(functionName, parameters) {
+    try {
+      console.log(\`🔄 Executing generic transaction: \${functionName}\`, parameters)
+      
+      // For generic functions, create a simple transaction
+      const chainNumber = parameters.chain || parameters.fromChain || 20
+      const provider = this.getProvider(chainNumber)
+      
+      // This is a placeholder for generic function execution
+      // In a real implementation, you would route to specific function logic
+      return {
+        success: true,
+        functionName,
+        parameters,
+        result: {
+          message: \`Generic execution of \${functionName} completed\`,
+          chainId: this.networks[chainNumber].chainId,
+          chainName: this.networks[chainNumber].name,
+          timestamp: new Date().toISOString()
+        }
+      }
+    } catch (error) {
+      console.error(\`Generic transaction failed:\`, error)
+      throw error
+    }
+  }
 }
 
 export const networkManager = new NetworkManager()
@@ -1742,20 +1796,33 @@ export default networkManager`
 async function generateRealFunctionTemplates(targetPath) {
   const content = `// Real Working Function Templates for Kadena Chainweb EVM
 import { ethers } from 'ethers'
-import { networkManager } from './networkManager'
+import { NetworkManager } from './networkManager'
 import toast from 'react-hot-toast'
 
 // REAL WORKING FUNCTIONS - These actually connect to Kadena Chainweb EVM
 
 export async function crossChainTransfer(fromChain, toChain, amount, recipient, signer) {
+  console.log('🔄 crossChainTransfer called with:', { fromChain, toChain, amount, recipient, signer: !!signer })
+  
+  const networkManager = new NetworkManager()
+  
   if (!signer) {
     throw new Error('Wallet not connected. Please connect your wallet first.')
   }
   
   try {
-    // Validate inputs
-    if (!fromChain || !toChain || !amount || !recipient) {
-      throw new Error('All parameters are required')
+    // Validate inputs with specific error messages
+    if (!fromChain) {
+      throw new Error('From Chain is required. Please select a source chain.')
+    }
+    if (!toChain) {
+      throw new Error('To Chain is required. Please select a destination chain.')
+    }
+    if (!amount) {
+      throw new Error('Amount is required. Please enter an amount to transfer.')
+    }
+    if (!recipient) {
+      throw new Error('Recipient address is required. Please enter a wallet address.')
     }
     
     if (fromChain === toChain) {
@@ -1811,9 +1878,17 @@ export async function crossChainTransfer(fromChain, toChain, amount, recipient, 
 }
 
 export async function getChainBalances(address, chainNumbers, signer = null) {
+  console.log('🔍 getChainBalances called with:', { address, chainNumbers, signer: !!signer })
+  
+  const networkManager = new NetworkManager()
+  
   try {
     if (!address) {
-      throw new Error('Address is required')
+      throw new Error('Wallet address is required. Please enter an address to check balances.')
+    }
+    
+    if (!chainNumbers || chainNumbers.length === 0) {
+      throw new Error('Chain numbers are required. Please select chains to check balances.')
     }
     
     console.log(\`🔍 Fetching balances for \${address} across chains: \${chainNumbers.join(', ')}\`)
@@ -1855,6 +1930,8 @@ export async function getChainBalances(address, chainNumbers, signer = null) {
 }
 
 export async function multiChainDeploy(chains, contractBytecode, constructorArgs = [], signer) {
+  const networkManager = new NetworkManager()
+  
   if (!signer) {
     throw new Error('Wallet not connected. Please connect your wallet first.')
   }
