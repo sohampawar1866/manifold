@@ -42,18 +42,25 @@ function App() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6 text-sm">
-          <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-            <h3 className="font-semibold text-blue-800 mb-2">🌐 Chainweb EVM Support</h3>
-            <p className="text-blue-600">
-              Supports Chains 20-24 on Kadena Chainweb EVM Testnet with Ethereum-compatible tooling
+        <div className="grid md:grid-cols-3 gap-4 text-sm">
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <h3 className="font-semibold text-blue-800 mb-2">🌐 Chainweb EVM</h3>
+            <p className="text-blue-600 text-xs">
+              Chains 20-24 • Ethereum-compatible • KDA currency
             </p>
           </div>
           
-          <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-            <h3 className="font-semibold text-green-800 mb-2">⚡ Ready-to-Use Functions</h3>
-            <p className="text-green-600">
-              Generate cross-chain transfer, multi-chain deploy, and use-case specific functions
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+            <h3 className="font-semibold text-green-800 mb-2">⚡ Multi-Chain Functions</h3>
+            <p className="text-green-600 text-xs">
+              Cross-chain transfers • Smart contract deployment • DeFi operations
+            </p>
+          </div>
+          
+          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+            <h3 className="font-semibold text-purple-800 mb-2">📚 Swagger-Style UI</h3>
+            <p className="text-purple-600 text-xs">
+              Interactive docs • Live testing • Code examples
             </p>
           </div>
         </div>
