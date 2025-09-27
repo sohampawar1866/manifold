@@ -6,41 +6,20 @@ const CHAIN_CONFIGS = {
   20: {
     chainId: 5920,
     name: 'Chainweb EVM Chain 20',
-    rpc: 'https://erpc.testnet.chainweb.com/chain-20',
-    wsRpc: 'wss://erpc.testnet.chainweb.com/chain-20',
-    blockExplorer: 'https://explorer.testnet.chainweb.com/chain-20',
-    contracts: {
-      router: process.env.ROUTER_CONTRACT_20,
-      factory: process.env.FACTORY_CONTRACT_20,
-      bridge: process.env.BRIDGE_CONTRACT_20,
-      lending: process.env.LENDING_CONTRACT_20
-    }
+    rpc: 'https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/20/evm/rpc',
+    blockExplorer: 'http://chain-20.evm-testnet-blockscout.chainweb.com/'
   },
   21: {
     chainId: 5921,
     name: 'Chainweb EVM Chain 21',
-    rpc: 'https://erpc.testnet.chainweb.com/chain-21',
-    wsRpc: 'wss://erpc.testnet.chainweb.com/chain-21',
-    blockExplorer: 'https://explorer.testnet.chainweb.com/chain-21',
-    contracts: {
-      router: process.env.ROUTER_CONTRACT_21,
-      factory: process.env.FACTORY_CONTRACT_21,
-      bridge: process.env.BRIDGE_CONTRACT_21,
-      lending: process.env.LENDING_CONTRACT_21
-    }
+    rpc: 'https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/21/evm/rpc',
+    blockExplorer: 'http://chain-21.evm-testnet-blockscout.chainweb.com/'
   },
   22: {
     chainId: 5922,
     name: 'Chainweb EVM Chain 22',
-    rpc: 'https://erpc.testnet.chainweb.com/chain-22',
-    wsRpc: 'wss://erpc.testnet.chainweb.com/chain-22',
-    blockExplorer: 'https://explorer.testnet.chainweb.com/chain-22',
-    contracts: {
-      router: process.env.ROUTER_CONTRACT_22,
-      factory: process.env.FACTORY_CONTRACT_22,
-      bridge: process.env.BRIDGE_CONTRACT_22,
-      lending: process.env.LENDING_CONTRACT_22
-    }
+    rpc: 'https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/22/evm/rpc',
+    blockExplorer: 'http://chain-22.evm-testnet-blockscout.chainweb.com/'
   },
   23: {
     chainId: 5923,
@@ -68,8 +47,6 @@ export const FUNCTION_TEMPLATES = {
     category: 'core',
     complexity: 'beginner',
     gasEstimate: 'medium',
-    contractRequired: true,
-    contractAddress: (chain) => CHAIN_CONFIGS[chain].contracts.bridge,
     parameters: [
       { name: 'fromChain', type: 'number', description: 'Source chain number', required: true },
       { name: 'toChain', type: 'number', description: 'Destination chain number', required: true },

@@ -6,64 +6,43 @@ export const CHAINWEB_EVM_TESTNET_CHAINS = {
     chainId: 5920,
     name: 'Chainweb EVM Chain 20',
     shortName: 'Chain 20',
-    rpc: 'https://erpc.testnet.chainweb.com/chain-20',
-    wsRpc: 'wss://erpc.testnet.chainweb.com/chain-20',
-    blockExplorer: 'https://explorer.testnet.chainweb.com/chain-20',
+    rpc: 'https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/20/evm/rpc',
+    blockExplorer: 'http://chain-20.evm-testnet-blockscout.chainweb.com/',
     currency: {
       name: 'Kadena',
       symbol: 'KDA',
       decimals: 18
     },
     testnet: true,
-    icon: 'CHAIN_20',
-    contracts: {
-      bridge: process.env.BRIDGE_CONTRACT_20 || '0x...',
-      router: process.env.ROUTER_CONTRACT_20 || '0x...',
-      token: process.env.TOKEN_CONTRACT_20 || '0x...',
-      defi: process.env.DEFI_CONTRACT_20 || '0x...'
-    }
+    icon: 'CHAIN_20'
   },
   21: {
     chainId: 5921,
     name: 'Chainweb EVM Chain 21',
     shortName: 'Chain 21',
-    rpc: 'https://erpc.testnet.chainweb.com/chain-21',
-    wsRpc: 'wss://erpc.testnet.chainweb.com/chain-21',
-    blockExplorer: 'https://explorer.testnet.chainweb.com/chain-21',
+    rpc: 'https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/21/evm/rpc',
+    blockExplorer: 'http://chain-21.evm-testnet-blockscout.chainweb.com/',
     currency: {
       name: 'Kadena',
       symbol: 'KDA',
       decimals: 18
     },
     testnet: true,
-    icon: 'CHAIN_21',
-    contracts: {
-      bridge: process.env.BRIDGE_CONTRACT_21 || '0x...',
-      router: process.env.ROUTER_CONTRACT_21 || '0x...',
-      token: process.env.TOKEN_CONTRACT_21 || '0x...',
-      defi: process.env.DEFI_CONTRACT_21 || '0x...'
-    }
+    icon: 'CHAIN_21'
   },
   22: {
     chainId: 5922,
     name: 'Chainweb EVM Chain 22',
     shortName: 'Chain 22',
-    rpc: 'https://erpc.testnet.chainweb.com/chain-22',
-    wsRpc: 'wss://erpc.testnet.chainweb.com/chain-22',
-    blockExplorer: 'https://explorer.testnet.chainweb.com/chain-22',
+    rpc: 'https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/22/evm/rpc',
+    blockExplorer: 'http://chain-22.evm-testnet-blockscout.chainweb.com/',
     currency: {
       name: 'Kadena',
       symbol: 'KDA',
       decimals: 18
     },
     testnet: true,
-    icon: 'CHAIN_22',
-    contracts: {
-      bridge: process.env.BRIDGE_CONTRACT_22 || '0x...',
-      router: process.env.ROUTER_CONTRACT_22 || '0x...',
-      token: process.env.TOKEN_CONTRACT_22 || '0x...',
-      defi: process.env.DEFI_CONTRACT_22 || '0x...'
-    }
+    icon: 'CHAIN_22'
   },
   23: {
     chainId: 5923,
