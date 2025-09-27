@@ -1,32 +1,61 @@
 {
-  "name": "kadena-multichain-template",
-  "private": true,
+  "name": "manifold",
   "version": "1.0.0",
+  "description": "Kadena Chainweb EVM Multi-Chain Function Generator - A Swagger-style interactive platform for generating ready-to-use multi-chain functions",
   "type": "module",
-  "description": "Ready-to-use Kadena Chainweb EVM multi-chain dApp template",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "onboard": "node scripts/onboard.js",
-    "setup": "node scripts/setup.js",
-    "deploy": "node scripts/deploy.js",
-    "test-deployment": "node scripts/test-deployment.js",
-    "compile-contracts": "node scripts/compile-contracts.js"
+    "setup": "node scripts/setup.cjs"
   },
+  "keywords": [
+    "kadena",
+    "chainweb",
+    "evm",
+    "multi-chain",
+    "ethereum",
+    "defi",
+    "blockchain",
+    "web3"
+  ],
+  "author": "Soham Pawar",
+  "license": "MIT",
   "dependencies": {
-    "ethers": "^6.15.0",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2",
+    "ethers": "^6.13.2",
+    "wagmi": "^2.12.12",
+    "@wagmi/core": "^2.13.5",
+    "viem": "^2.21.12",
+    "lucide-react": "^0.441.0",
+    "clsx": "^2.1.1",
+    "react-hot-toast": "^2.4.1"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.13",
-    "@vitejs/plugin-react": "^5.0.3",
-    "autoprefixer": "^10.4.21",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.13",
-    "vite": "^7.1.7",
-    "solc": "^0.8.21",
-    "inquirer": "^9.2.12"
-  }
+    "@types/react": "^18.3.8",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.7",
+    "tailwindcss": "^4.0.0-alpha.25",
+    "@tailwindcss/vite": "^4.0.0-alpha.25",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "inquirer": "^10.2.0",
+    "chalk": "^5.3.0",
+    "ora": "^8.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sohampawar1866/manifold.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sohampawar1866/manifold/issues"
+  },
+  "homepage": "https://github.com/sohampawar1866/manifold#readme"
 }

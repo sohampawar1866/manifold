@@ -1,112 +1,67 @@
-import { useState } from 'react'
-import { MultiChainDashboard } from './components/MultiChainDashboard.jsx'
-import { AdvancedOperations } from './components/AdvancedOperations.jsx'
-import './App.css'
+import React from 'react'
+
+// This is the DEVELOPMENT VERSION of Manifold
+// According to architecture.md, users should run `npm run setup` to generate the actual application
 
 function App() {
-  const [activeTab, setActiveTab] = useState('dashboard')
-
   return (
-    <div className="min-h-screen bg-gray-900">
-      {/* Header */}
-      <header className="bg-gray-800 border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg flex items-center justify-center">
-                <span className="text-gray-900 font-bold text-lg">M</span>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white">
-                  Manifold
-                </h1>
-                <p className="text-sm text-gray-400">
-                  Kadena Chainweb EVM Platform
-                </p>
-              </div>
-            </div>
-            
-            <nav className="flex space-x-1">
-              <button
-                onClick={() => setActiveTab('dashboard')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === 'dashboard'
-                    ? 'bg-amber-500 text-gray-900'
-                    : 'text-gray-300 hover:text-white hover:bg-gray-700'
-                }`}
-              >
-                Dashboard
-              </button>
-              <button
-                onClick={() => setActiveTab('operations')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === 'operations'
-                    ? 'bg-amber-500 text-gray-900'
-                    : 'text-gray-300 hover:text-white hover:bg-gray-700'
-                }`}
-              >
-                Operations
-              </button>
-            </nav>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        {activeTab === 'dashboard' && <MultiChainDashboard />}
-        {activeTab === 'operations' && <AdvancedOperations />}
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-gray-800 border-t border-gray-700 mt-12">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="md:col-span-2">
-              <div className="flex items-center space-x-2 mb-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg flex items-center justify-center">
-                  <span className="text-gray-900 font-bold text-sm">M</span>
-                </div>
-                <span className="text-white font-bold text-lg">Manifold</span>
-              </div>
-              <p className="text-gray-400 text-sm leading-relaxed mb-3">
-                Enterprise multi-chain platform built on Kadena's braided chain architecture.
-              </p>
-              <div className="flex space-x-4">
-                <a href="#" className="text-amber-400 hover:text-amber-300 text-sm">Docs</a>
-                <a href="#" className="text-blue-400 hover:text-blue-300 text-sm">API</a>
-                <a href="#" className="text-red-400 hover:text-red-300 text-sm">Support</a>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-white font-semibold text-sm mb-3">Features</h3>
-              <ul className="text-gray-400 text-sm space-y-1">
-                <li>Braided chains</li>
-                <li>SPV transfers</li>
-                <li>PoW security</li>
-                <li>Linear scaling</li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="text-white font-semibold text-sm mb-3">Network</h3>
-              <ul className="text-gray-400 text-sm space-y-1">
-                <li>480k TPS capacity</li>
-                <li>Sub-second finality</li>
-                <li>Zero gas fees</li>
-                <li>EVM compatible</li>
-              </ul>
-            </div>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center max-w-2xl mx-auto p-8">
+        <div className="text-8xl mb-6">🚀</div>
+        <h1 className="text-4xl font-bold text-gray-800 mb-4">
+          Welcome to Manifold
+        </h1>
+        <p className="text-xl text-gray-600 mb-2">
+          Kadena Chainweb EVM Multi-Chain Function Generator
+        </p>
+        <p className="text-gray-500 mb-8">
+          A Swagger-style interactive platform for generating ready-to-use multi-chain functions
+        </p>
+        
+        <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-200 mb-8">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+            🛠️ Setup Required
+          </h2>
+          <p className="text-gray-600 mb-6">
+            To generate your custom Kadena Chainweb EVM application, please run the setup wizard:
+          </p>
+          
+          <div className="bg-gray-900 p-4 rounded-lg text-left mb-6">
+            <code className="text-green-400 text-lg font-mono">npm run setup</code>
           </div>
           
-          <div className="border-t border-gray-700 mt-6 pt-4">
-            <p className="text-gray-500 text-xs text-center">
-              © 2025 Manifold Framework. Enterprise blockchain development.
+          <div className="text-sm text-gray-500 text-left">
+            <p className="mb-2"><strong>The setup wizard will:</strong></p>
+            <ul className="list-disc list-inside space-y-1 ml-4">
+              <li>Ask about your use case (DeFi, Gaming, NFT, Bridge, Custom)</li>
+              <li>Let you select Chainweb EVM chains (20-24)</li>
+              <li>Choose function generation mode (Recommended/Manual)</li>
+              <li>Generate a clean project in <code className="bg-gray-100 px-1 rounded">gen_manifold/</code></li>
+              <li>Provide a Swagger-style function explorer</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6 text-sm">
+          <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+            <h3 className="font-semibold text-blue-800 mb-2">🌐 Chainweb EVM Support</h3>
+            <p className="text-blue-600">
+              Supports Chains 20-24 on Kadena Chainweb EVM Testnet with Ethereum-compatible tooling
+            </p>
+          </div>
+          
+          <div className="bg-green-50 p-6 rounded-lg border border-green-200">
+            <h3 className="font-semibold text-green-800 mb-2">⚡ Ready-to-Use Functions</h3>
+            <p className="text-green-600">
+              Generate cross-chain transfer, multi-chain deploy, and use-case specific functions
             </p>
           </div>
         </div>
-      </footer>
+
+        <div className="mt-8 text-xs text-gray-400">
+          <p>Manifold v1.0.0 • Made for Kadena Chainweb EVM • Terminal-based Setup</p>
+        </div>
+      </div>
     </div>
   )
 }
