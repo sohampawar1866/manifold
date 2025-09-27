@@ -299,8 +299,6 @@ export default manifoldConfig`
   console.log(`${colors.cyan}${colors.bold}  cd gen_manifold${colors.reset}`)
   console.log(`${colors.cyan}${colors.bold}  npm install${colors.reset}`)
   console.log(`${colors.cyan}${colors.bold}  npm run dev${colors.reset}\n`)
-  console.log(`${colors.blue}Your Swagger-style function explorer will be available at:${colors.reset}`)
-  console.log(`${colors.cyan}${colors.bold}  http://localhost:5173${colors.reset}\n`)
 }
 
 async function generateProjectStructure(targetPath) {
