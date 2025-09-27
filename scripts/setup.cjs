@@ -332,7 +332,6 @@ async function generateProjectStructure(targetPath) {
   await generateComponents(targetPath)
   await generateHooks(targetPath)
   await generateUtils(targetPath)
-  await generateRealFunctionTemplates(targetPath)
   await generateIndexCss(targetPath)
   await generateReadme(targetPath)
   
@@ -551,21 +550,16 @@ async function generateCleanApp(targetPath) {
   
   const content = `import React, { useState, useEffect } from 'react'
 import { toast } from 'react-hot-toast'
-import { ethers } from 'ethers'
-import { Code, Zap, BookOpen, Wallet, AlertCircle } from 'lucide-react'
+import { Code, Zap, BookOpen } from 'lucide-react'
 import FunctionCard from './components/FunctionCard'
 import { useFunctionGenerator } from './hooks/useFunctionGenerator'
 import { useChainConfig } from './hooks/useChainConfig'
-import { useWallet } from './hooks/useWallet'
-import { NetworkManager } from './utils/networkManager'
-import { crossChainTransfer, getChainBalances, multiChainDeploy } from './utils/realFunctions'
 import manifoldConfig from './manifold.config.js'
 
 function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [executingFunctions, setExecutingFunctions] = useState({})
-  const [filteredFunctions, setFilteredFunctions] = useState([])
   
   const chainConfig = useChainConfig(manifoldConfig.selectedChains)
   const functionGen = useFunctionGenerator(
@@ -573,17 +567,8 @@ function App() {
     manifoldConfig.selectedFunctions, 
     manifoldConfig.useCase
   )
-  
-  const { 
-    account, 
-    isConnected, 
-    chainId,
-    connectWallet, 
-    disconnectWallet, 
-    switchToChain,
-    balance,
-    isConnecting 
-  } = useWallet()
+
+  const [filteredFunctions, setFilteredFunctions] = useState([])
 
   useEffect(() => {
     // Load configuration and initialize app
@@ -631,74 +616,30 @@ function App() {
   }, [functionGen.generatedFunctions, searchTerm])
 
   const handleFunctionExecute = async (functionName, parameters) => {
-    // Check wallet connection first
-    if (!isConnected) {
-      toast.error('Please connect your wallet first')
-      return
-    }
-
     setExecutingFunctions(prev => ({ ...prev, [functionName]: true }))
     
     try {
-      let result
+      // Simulate function execution
+      await new Promise(resolve => setTimeout(resolve, 2000))
       
-      // Get wallet signer for transactions
-      const provider = new ethers.BrowserProvider(window.ethereum)
-      const signer = await provider.getSigner()
-      
-      // Route to appropriate real function based on function name
-      switch (functionName) {
-        case 'crossChainTransfer':
-          result = await crossChainTransfer(
-            parameters.fromChain || 20,
-            parameters.toChain || 21,
-            parameters.amount || '0.01',
-            parameters.recipient || account,
-            signer
-          )
-          break
-        case 'getChainBalances':
-          result = await getChainBalances(
-            parameters.address || account,
-            parameters.chains || manifoldConfig.selectedChains,
-            signer
-          )
-          break
-        case 'multiChainDeploy':
-          result = await multiChainDeploy(
-            parameters.chains || manifoldConfig.selectedChains,
-            parameters.contractBytecode,
-            parameters.constructorArgs || [],
-            signer
-          )
-          break
-        case 'addLiquidityMultiChain':
-        case 'executeArbitrage':
-        case 'crossChainYieldFarm':
-        case 'multiChainLending':
-          // Not implemented yet, show error
-          throw new Error('Function not yet implemented: ' + functionName)
-        default:
-          // For other functions, create a generic blockchain interaction
-          const networkManager = new NetworkManager()
-          if (typeof networkManager.executeTransaction === 'function') {
-            result = await networkManager.executeTransaction(functionName, parameters)
-          } else {
-            throw new Error('Function not supported: ' + functionName)
-          }
-          break
+      const mockResult = {
+        success: true,
+        functionName,
+        parameters,
+        result: {
+          txHash: '0xabc123def456789...',
+          blockNumber: Math.floor(Math.random() * 1000000) + 12345,
+          gasUsed: '21000',
+          timestamp: new Date().toISOString(),
+          chainId: parameters.fromChain || parameters.chain || manifoldConfig.selectedChains[0] || 20
+        }
       }
       
-      if (result && result.success) {
-        toast.success(\`\${functionName} executed successfully!\`)
-        return result
-      } else {
-        throw new Error(result?.error || 'Transaction failed')
-      }
+      toast.success(\`\${functionName} executed successfully!\`)
+      return mockResult
     } catch (error) {
       console.error('Function execution failed:', error)
-      const errorMsg = error.message || 'Unknown error occurred'
-      toast.error(\`Execution failed: \${errorMsg}\`)
+      toast.error('Execution failed: ' + error.message)
       throw error
     } finally {
       setExecutingFunctions(prev => ({ ...prev, [functionName]: false }))
@@ -817,78 +758,6 @@ function App() {
         </div>
       </header>
 
-      {/* Wallet Connection Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="card-container p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center space-x-3">
-              <div className={\`w-3 h-3 rounded-full \${isConnected ? 'bg-green-500' : 'bg-red-500'}\`}></div>
-              <div>
-                <h3 className="font-semibold text-slate-800">
-                  Wallet Status: {isConnected ? 'Connected' : 'Disconnected'}
-                </h3>
-                {isConnected && (
-                  <div className="text-sm text-slate-600">
-                    <p>Account: {account?.slice(0, 6)}...{account?.slice(-4)}</p>
-                    <p>Network: {network ? \`Chain \${network.chainId}\` : 'Unknown'}</p>
-                    <p>Balance: {balance} KDA</p>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              {!isConnected ? (
-                <button
-                  onClick={connectWallet}
-                  disabled={isConnecting}
-                  className="btn-primary flex items-center space-x-2"
-                >
-                  <Wallet className="w-4 h-4" />
-                  <span>{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
-                </button>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <select
-                    value={chainId || ''}
-                    onChange={(e) => {
-                      const selectedChainId = parseInt(e.target.value)
-                      // Convert chainId to chain number (5920 -> 20, 5921 -> 21, etc.)
-                      const chainNumber = selectedChainId - 5900
-                      switchToChain(chainNumber)
-                    }}
-                    className="input-primary text-sm"
-                  >
-                    <option value="">Select Chain</option>
-                    <option value="5920">Chain 20</option>
-                    <option value="5921">Chain 21</option>
-                    <option value="5922">Chain 22</option>
-                    <option value="5923">Chain 23</option>
-                    <option value="5924">Chain 24</option>
-                  </select>
-                  <button
-                    onClick={disconnectWallet}
-                    className="btn-secondary text-sm"
-                  >
-                    Disconnect
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          {!isConnected && (
-            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start space-x-3">
-              <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-yellow-800">
-                <p className="font-medium mb-1">Wallet Required</p>
-                <p>Connect your MetaMask wallet to execute blockchain functions on Kadena Chainweb EVM networks.</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
       {/* Configuration Summary Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="card-container p-6 mb-8">
@@ -896,11 +765,10 @@ function App() {
             <h2 className="text-2xl font-semibold text-slate-800">
               Configuration Overview
             </h2>
-                  <div className="text-sm text-slate-600">
-                    <p>Account: {account ? `${account.slice(0, 6)}...${account.slice(-4)}` : 'N/A'}</p>
-                    <p>Network: {chainId ? `Chain ${chainId}` : 'Unknown'}</p>
-                    <p>Balance: {balance} KDA</p>
-                  </div>
+            <div className="text-sm text-slate-500">
+              Generated for {useCaseName}
+            </div>
+          </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Chains Section */}
@@ -980,15 +848,13 @@ function App() {
         <div className="space-y-6">
           {filteredFunctions.length > 0 ? (
             filteredFunctions.map((functionData) => (
-                <FunctionCard
-                  key={functionData.name}
-                  functionData={functionData}
-                  chainConfigs={chainConfig.chainConfigs || []}
-                  onExecute={handleFunctionExecute}
-                  isExecuting={executingFunctions[functionData.name] || false}
-                  walletConnected={isConnected}
-                  currentAccount={account}
-                />
+              <FunctionCard
+                key={functionData.name}
+                functionData={functionData}
+                chainConfigs={chainConfig.chainConfigs || []}
+                onExecute={handleFunctionExecute}
+                isExecuting={executingFunctions[functionData.name] || false}
+              />
             ))
           ) : functionGen.isGenerating ? (
             <div className="card-container text-center py-16 animate-fade-in">
@@ -1274,10 +1140,6 @@ async function generateHooks(targetPath) {
       console.log(`${colors.green}✅ Copied ${file}${colors.reset}`)
     }
   })
-  
-  // Generate real wallet connection hook
-  await generateWalletHook(targetPath)
-  await generateNetworkManager(targetPath)
 }
 
 async function generateReadme(targetPath) {
@@ -1383,656 +1245,6 @@ async function generateUtils(targetPath) {
       console.log(`${colors.green}✅ Copied ${file}${colors.reset}`)
     }
   })
-}
-
-async function generateWalletHook(targetPath) {
-  const content = `import { useState, useEffect, useCallback } from 'react'
-import { ethers } from 'ethers'
-import toast from 'react-hot-toast'
-
-// Kadena Chainweb EVM Networks
-const KADENA_NETWORKS = {
-  20: {
-    chainId: '0x1720', // 5920 in hex
-    chainName: 'Kadena Chainweb EVM Chain 20',
-    rpcUrls: ['https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/20/evm/rpc'],
-    nativeCurrency: { name: 'KDA', symbol: 'KDA', decimals: 18 },
-    blockExplorerUrls: ['http://chain-20.evm-testnet-blockscout.chainweb.com/']
-  },
-  21: {
-    chainId: '0x1721', // 5921 in hex
-    chainName: 'Kadena Chainweb EVM Chain 21',
-    rpcUrls: ['https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/21/evm/rpc'],
-    nativeCurrency: { name: 'KDA', symbol: 'KDA', decimals: 18 },
-    blockExplorerUrls: ['http://chain-21.evm-testnet-blockscout.chainweb.com/']
-  },
-  22: {
-    chainId: '0x1722', // 5922 in hex
-    chainName: 'Kadena Chainweb EVM Chain 22',
-    rpcUrls: ['https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/22/evm/rpc'],
-    nativeCurrency: { name: 'KDA', symbol: 'KDA', decimals: 18 },
-    blockExplorerUrls: ['http://chain-22.evm-testnet-blockscout.chainweb.com/']
-  },
-  23: {
-    chainId: '0x1723', // 5923 in hex
-    chainName: 'Kadena Chainweb EVM Chain 23',
-    rpcUrls: ['https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/23/evm/rpc'],
-    nativeCurrency: { name: 'KDA', symbol: 'KDA', decimals: 18 },
-    blockExplorerUrls: ['http://chain-23.evm-testnet-blockscout.chainweb.com/']
-  },
-  24: {
-    chainId: '0x1724', // 5924 in hex
-    chainName: 'Kadena Chainweb EVM Chain 24',
-    rpcUrls: ['https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/24/evm/rpc'],
-    nativeCurrency: { name: 'KDA', symbol: 'KDA', decimals: 18 },
-    blockExplorerUrls: ['http://chain-24.evm-testnet-blockscout.chainweb.com/']
-  }
-}
-
-export const useWallet = () => {
-  const [account, setAccount] = useState(null)
-  const [provider, setProvider] = useState(null)
-  const [signer, setSigner] = useState(null)
-  const [chainId, setChainId] = useState(null)
-  const [isConnecting, setIsConnecting] = useState(false)
-  const [balance, setBalance] = useState('0')
-
-  // Check if wallet is already connected
-  useEffect(() => {
-    checkConnection()
-    
-    if (window.ethereum) {
-      window.ethereum.on('accountsChanged', handleAccountsChanged)
-      window.ethereum.on('chainChanged', handleChainChanged)
-    }
-    
-    return () => {
-      if (window.ethereum) {
-        window.ethereum.removeListener('accountsChanged', handleAccountsChanged)
-        window.ethereum.removeListener('chainChanged', handleChainChanged)
-      }
-    }
-  }, [])
-
-  // Update balance when account or chain changes
-  useEffect(() => {
-    if (account && provider) {
-      updateBalance()
-    }
-  }, [account, provider, chainId])
-
-  const checkConnection = async () => {
-    if (window.ethereum) {
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' })
-        if (accounts.length > 0) {
-          const provider = new ethers.BrowserProvider(window.ethereum)
-          const signer = await provider.getSigner()
-          const network = await provider.getNetwork()
-          
-          setAccount(accounts[0])
-          setProvider(provider)
-          setSigner(signer)
-          setChainId(Number(network.chainId))
-        }
-      } catch (error) {
-        console.error('Error checking wallet connection:', error)
-      }
-    }
-  }
-
-  const connectWallet = async () => {
-    if (!window.ethereum) {
-      toast.error('MetaMask not found! Please install MetaMask.')
-      return false
-    }
-
-    setIsConnecting(true)
-    
-    try {
-      // Request account access
-      const accounts = await window.ethereum.request({ 
-        method: 'eth_requestAccounts' 
-      })
-      
-      const provider = new ethers.BrowserProvider(window.ethereum)
-      const signer = await provider.getSigner()
-      const network = await provider.getNetwork()
-      
-      setAccount(accounts[0])
-      setProvider(provider)
-      setSigner(signer)
-      setChainId(Number(network.chainId))
-      
-      toast.success('Wallet connected successfully!')
-      return true
-    } catch (error) {
-      console.error('Error connecting wallet:', error)
-      toast.error('Failed to connect wallet')
-      return false
-    } finally {
-      setIsConnecting(false)
-    }
-  }
-
-  const disconnectWallet = () => {
-    setAccount(null)
-    setProvider(null)
-    setSigner(null)
-    setChainId(null)
-    setBalance('0')
-    toast.success('Wallet disconnected')
-  }
-
-  const switchToChain = async (chainNumber) => {
-    if (!window.ethereum) {
-      toast.error('MetaMask not found!')
-      return false
-    }
-
-    const network = KADENA_NETWORKS[chainNumber]
-    if (!network) {
-      toast.error(\`Unsupported chain: \${chainNumber}\`)
-      return false
-    }
-
-    try {
-      // Try to switch to the network
-      await window.ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: network.chainId }],
-      })
-      
-      toast.success(\`Switched to \${network.chainName}\`)
-      return true
-    } catch (switchError) {
-      // If network doesn't exist, add it
-      if (switchError.code === 4902) {
-        try {
-          await window.ethereum.request({
-            method: 'wallet_addEthereumChain',
-            params: [network],
-          })
-          
-          toast.success(\`Added and switched to \${network.chainName}\`)
-          return true
-        } catch (addError) {
-          console.error('Error adding network:', addError)
-          toast.error('Failed to add network')
-          return false
-        }
-      } else {
-        console.error('Error switching network:', switchError)
-        toast.error('Failed to switch network')
-        return false
-      }
-    }
-  }
-
-  const updateBalance = async () => {
-    if (!provider || !account) return
-    
-    try {
-      const balance = await provider.getBalance(account)
-      setBalance(ethers.formatEther(balance))
-    } catch (error) {
-      console.error('Error updating balance:', error)
-    }
-  }
-
-  const handleAccountsChanged = (accounts) => {
-    if (accounts.length === 0) {
-      disconnectWallet()
-    } else {
-      setAccount(accounts[0])
-    }
-  }
-
-  const handleChainChanged = (chainId) => {
-    setChainId(Number(chainId))
-    // Reload the page to reset state
-    window.location.reload()
-  }
-
-  const getNetworkName = () => {
-    const chain = Object.values(KADENA_NETWORKS).find(
-      network => parseInt(network.chainId, 16) === chainId
-    )
-    return chain ? chain.chainName : 'Unknown Network'
-  }
-
-  const isKadenaNetwork = () => {
-    return Object.values(KADENA_NETWORKS).some(
-      network => parseInt(network.chainId, 16) === chainId
-    )
-  }
-
-  return {
-    // State
-    account,
-    provider,
-    signer,
-    chainId,
-    balance,
-    isConnecting,
-    isConnected: !!account,
-    isKadenaNetwork: isKadenaNetwork(),
-    networkName: getNetworkName(),
-    
-    // Actions
-    connectWallet,
-    disconnectWallet,
-    switchToChain,
-    updateBalance,
-    
-    // Network info
-    supportedNetworks: KADENA_NETWORKS
-  }
-}
-
-export default useWallet`
-  
-  fs.writeFileSync(path.join(targetPath, 'src/hooks/useWallet.js'), content)
-  console.log(`${colors.green}✅ Generated useWallet.js with real wallet connectivity${colors.reset}`)
-}
-
-async function generateNetworkManager(targetPath) {
-  const content = `import { ethers } from 'ethers'
-import toast from 'react-hot-toast'
-
-// Real blockchain interaction utilities for Kadena Chainweb EVM
-export class NetworkManager {
-  constructor() {
-    this.providers = {}
-    this.networks = {
-      20: {
-        chainId: 5920,
-        rpc: 'https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/20/evm/rpc',
-        explorer: 'http://chain-20.evm-testnet-blockscout.chainweb.com/',
-        name: 'Kadena Chain 20'
-      },
-      21: {
-        chainId: 5921,
-        rpc: 'https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/21/evm/rpc',
-        explorer: 'http://chain-21.evm-testnet-blockscout.chainweb.com/',
-        name: 'Kadena Chain 21'
-      },
-      22: {
-        chainId: 5922,
-        rpc: 'https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/22/evm/rpc',
-        explorer: 'http://chain-22.evm-testnet-blockscout.chainweb.com/',
-        name: 'Kadena Chain 22'
-      },
-      23: {
-        chainId: 5923,
-        rpc: 'https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/23/evm/rpc',
-        explorer: 'http://chain-23.evm-testnet-blockscout.chainweb.com/',
-        name: 'Kadena Chain 23'
-      },
-      24: {
-        chainId: 5924,
-        rpc: 'https://evm-testnet.chainweb.com/chainweb/0.0/evm-testnet/chain/24/evm/rpc',
-        explorer: 'http://chain-24.evm-testnet-blockscout.chainweb.com/',
-        name: 'Kadena Chain 24'
-      }
-    }
-    
-    this.initializeProviders()
-  }
-
-  initializeProviders() {
-    Object.keys(this.networks).forEach(chainNum => {
-      const network = this.networks[chainNum]
-      this.providers[chainNum] = new ethers.JsonRpcProvider(network.rpc)
-    })
-  }
-
-  getProvider(chainNumber) {
-    if (!this.providers[chainNumber]) {
-      throw new Error(\`No provider found for chain \${chainNumber}\`)
-    }
-    return this.providers[chainNumber]
-  }
-
-  getNetwork(chainNumber) {
-    if (!this.networks[chainNumber]) {
-      throw new Error(\`Network \${chainNumber} not supported\`)
-    }
-    return this.networks[chainNumber]
-  }
-
-  async getBalance(chainNumber, address) {
-    try {
-      const provider = this.getProvider(chainNumber)
-      const balance = await provider.getBalance(address)
-      return {
-        wei: balance.toString(),
-        eth: ethers.formatEther(balance),
-        chainNumber,
-        chainName: this.networks[chainNumber].name
-      }
-    } catch (error) {
-      console.error(\`Error getting balance on chain \${chainNumber}:\`, error)
-      throw error
-    }
-  }
-
-  async sendTransaction(chainNumber, signer, transaction) {
-    try {
-      const network = this.getNetwork(chainNumber)
-      const tx = await signer.sendTransaction(transaction)
-      const receipt = await tx.wait()
-      
-      return {
-        success: true,
-        txHash: tx.hash,
-        blockNumber: receipt.blockNumber,
-        gasUsed: receipt.gasUsed.toString(),
-        explorerUrl: \`\${network.explorer}tx/\${tx.hash}\`,
-        chainId: network.chainId,
-        chainName: network.name
-      }
-    } catch (error) {
-      console.error(\`Transaction failed on chain \${chainNumber}:\`, error)
-      throw error
-    }
-  }
-
-  async getBalanceMultiChain(chainNumbers, address) {
-    const balances = {}
-    
-    for (const chainNum of chainNumbers) {
-      try {
-        const balance = await this.getBalance(chainNum, address)
-        balances[chainNum] = balance
-      } catch (error) {
-        console.error(\`Failed to get balance for chain \${chainNum}:\`, error)
-        balances[chainNum] = {
-          wei: '0',
-          eth: '0',
-          chainNumber: chainNum,
-          chainName: this.networks[chainNum]?.name || \`Chain \${chainNum}\`,
-          error: error.message
-        }
-      }
-    }
-    
-    return balances
-  }
-
-  getExplorerUrl(chainNumber, txHash) {
-    const network = this.getNetwork(chainNumber)
-    return \`\${network.explorer}tx/\${txHash}\`
-  }
-
-  async executeTransaction(functionName, parameters) {
-    try {
-      console.log(\`🔄 Executing generic transaction: \${functionName}\`, parameters)
-      
-      // For generic functions, create a simple transaction
-      const chainNumber = parameters.chain || parameters.fromChain || 20
-      const provider = this.getProvider(chainNumber)
-      
-      // This is a placeholder for generic function execution
-      // In a real implementation, you would route to specific function logic
-      return {
-        success: true,
-        functionName,
-        parameters,
-        result: {
-          message: \`Generic execution of \${functionName} completed\`,
-          chainId: this.networks[chainNumber].chainId,
-          chainName: this.networks[chainNumber].name,
-          timestamp: new Date().toISOString()
-        }
-      }
-    } catch (error) {
-      console.error(\`Generic transaction failed:\`, error)
-      throw error
-    }
-  }
-}
-
-export const networkManager = new NetworkManager()
-export default networkManager`
-  
-  fs.writeFileSync(path.join(targetPath, 'src/utils/networkManager.js'), content)
-  console.log(`${colors.green}✅ Generated networkManager.js with real blockchain utilities${colors.reset}`)
-}
-
-async function generateRealFunctionTemplates(targetPath) {
-  const content = `// Real Working Function Templates for Kadena Chainweb EVM
-import { ethers } from 'ethers'
-import { NetworkManager } from './networkManager'
-import toast from 'react-hot-toast'
-
-// REAL WORKING FUNCTIONS - These actually connect to Kadena Chainweb EVM
-
-export async function crossChainTransfer(fromChain, toChain, amount, recipient, signer) {
-  console.log('🔄 crossChainTransfer called with:', { fromChain, toChain, amount, recipient, signer: !!signer })
-  
-  const networkManager = new NetworkManager()
-  
-  if (!signer) {
-    throw new Error('Wallet not connected. Please connect your wallet first.')
-  }
-  
-  try {
-    // Validate inputs with specific error messages
-    if (!fromChain) {
-      throw new Error('From Chain is required. Please select a source chain.')
-    }
-    if (!toChain) {
-      throw new Error('To Chain is required. Please select a destination chain.')
-    }
-    if (!amount) {
-      throw new Error('Amount is required. Please enter an amount to transfer.')
-    }
-    if (!recipient) {
-      throw new Error('Recipient address is required. Please enter a wallet address.')
-    }
-    
-    if (fromChain === toChain) {
-      throw new Error('Cannot transfer to the same chain')
-    }
-    
-    // Check current network matches fromChain
-    const currentNetwork = await signer.provider.getNetwork()
-    const expectedChainId = networkManager.networks[fromChain].chainId
-    
-    if (Number(currentNetwork.chainId) !== expectedChainId) {
-      throw new Error(\`Please switch to Chain \${fromChain} (Chain ID: \${expectedChainId})\`)
-    }
-    
-    // Check balance
-    const balance = await signer.provider.getBalance(await signer.getAddress())
-    const transferAmount = ethers.parseEther(amount.toString())
-    
-    if (balance < transferAmount) {
-      throw new Error(\`Insufficient balance. You have \${ethers.formatEther(balance)} KDA\`)
-    }
-    
-    console.log(\`🚀 Initiating transfer from Chain \${fromChain} to Chain \${toChain}\`)
-    console.log(\`💰 Amount: \${amount} KDA\`)
-    console.log(\`📍 Recipient: \${recipient}\`)
-    
-    // Execute the transfer
-    const transaction = {
-      to: recipient,
-      value: transferAmount,
-      gasLimit: 21000
-    }
-    
-    const result = await networkManager.sendTransaction(fromChain, signer, transaction)
-    
-    toast.success(\`✅ Transfer completed! TX: \${result.txHash.slice(0,8)}...\`)
-    
-    return {
-      ...result,
-      fromChain,
-      toChain,
-      amount: amount.toString(),
-      recipient,
-      amountFormatted: \`\${amount} KDA\`,
-      message: \`Successfully transferred \${amount} KDA from Chain \${fromChain} to address \${recipient}\`
-    }
-    
-  } catch (error) {
-    console.error('❌ Cross-chain transfer failed:', error)
-    toast.error(\`Transfer failed: \${error.message}\`)
-    throw error
-  }
-}
-
-export async function getChainBalances(address, chainNumbers, signer = null) {
-  console.log('🔍 getChainBalances called with:', { address, chainNumbers, signer: !!signer })
-  
-  const networkManager = new NetworkManager()
-  
-  try {
-    if (!address) {
-      throw new Error('Wallet address is required. Please enter an address to check balances.')
-    }
-    
-    if (!chainNumbers || chainNumbers.length === 0) {
-      throw new Error('Chain numbers are required. Please select chains to check balances.')
-    }
-    
-    console.log(\`🔍 Fetching balances for \${address} across chains: \${chainNumbers.join(', ')}\`)
-    
-    const balances = await networkManager.getBalanceMultiChain(chainNumbers, address)
-    
-    let totalBalance = 0
-    const results = {}
-    
-    for (const [chainNum, balance] of Object.entries(balances)) {
-      const balanceInEth = parseFloat(balance.eth)
-      totalBalance += balanceInEth
-      
-      results[chainNum] = {
-        ...balance,
-        formatted: \`\${parseFloat(balance.eth).toFixed(4)} KDA\`,
-        chainName: networkManager.networks[chainNum].name,
-        explorerUrl: \`\${networkManager.networks[chainNum].explorer}address/\${address}\`
-      }
-    }
-    
-    console.log(\`✅ Total balance across all chains: \${totalBalance.toFixed(4)} KDA\`)
-    
-    return {
-      success: true,
-      address,
-      chains: chainNumbers,
-      balances: results,
-      totalBalance: totalBalance.toFixed(4),
-      totalBalanceFormatted: \`\${totalBalance.toFixed(4)} KDA\`,
-      timestamp: new Date().toISOString()
-    }
-    
-  } catch (error) {
-    console.error('❌ Failed to fetch balances:', error)
-    toast.error(\`Failed to get balances: \${error.message}\`)
-    throw error
-  }
-}
-
-export async function multiChainDeploy(chains, contractBytecode, constructorArgs = [], signer) {
-  const networkManager = new NetworkManager()
-  
-  if (!signer) {
-    throw new Error('Wallet not connected. Please connect your wallet first.')
-  }
-  
-  try {
-    console.log(\`🚀 Starting multi-chain deployment to chains: \${chains.join(', ')}\`)
-    
-    const deploymentResults = {}
-    let successCount = 0
-    
-    for (const chainNum of chains) {
-      try {
-        console.log(\`📦 Deploying to Chain \${chainNum}...\`)
-        
-        // Check if we're on the correct network
-        const currentNetwork = await signer.provider.getNetwork()
-        const expectedChainId = networkManager.networks[chainNum].chainId
-        
-        if (Number(currentNetwork.chainId) !== expectedChainId) {
-          throw new Error(\`Please switch to Chain \${chainNum} (Chain ID: \${expectedChainId})\`)
-        }
-        
-        // For demo purposes, we'll deploy a simple contract
-        // In real usage, you'd provide actual contract bytecode
-        const factory = new ethers.ContractFactory(
-          ['constructor()'], // Simple ABI
-          contractBytecode || '0x608060405234801561001057600080fd5b50', // Minimal bytecode
-          signer
-        )
-        
-        const contract = await factory.deploy(...constructorArgs)
-        await contract.waitForDeployment()
-        
-        const address = await contract.getAddress()
-        const deployTx = contract.deploymentTransaction()
-        
-        deploymentResults[chainNum] = {
-          success: true,
-          chainId: expectedChainId,
-          chainName: networkManager.networks[chainNum].name,
-          contractAddress: address,
-          deploymentTx: deployTx.hash,
-          explorerUrl: networkManager.getExplorerUrl(chainNum, deployTx.hash),
-          gasUsed: (await deployTx.wait()).gasUsed.toString()
-        }
-        
-        successCount++
-        console.log(\`✅ Deployed on Chain \${chainNum}: \${address}\`)
-        
-      } catch (error) {
-        console.error(\`❌ Deployment failed on Chain \${chainNum}:\`, error)
-        deploymentResults[chainNum] = {
-          success: false,
-          error: error.message,
-          chainName: networkManager.networks[chainNum].name
-        }
-      }
-    }
-    
-    const result = {
-      success: successCount > 0,
-      totalDeployments: chains.length,
-      successfulDeployments: successCount,
-      failedDeployments: chains.length - successCount,
-      deployments: deploymentResults,
-      summary: \`Deployed to \${successCount}/\${chains.length} chains successfully\`
-    }
-    
-    if (successCount > 0) {
-      toast.success(\`✅ Deployed to \${successCount}/\${chains.length} chains\`)
-    } else {
-      toast.error('❌ All deployments failed')
-    }
-    
-    return result
-    
-  } catch (error) {
-    console.error('❌ Multi-chain deployment failed:', error)
-    toast.error(\`Deployment failed: \${error.message}\`)
-    throw error
-  }
-}
-
-// Export all real functions
-export const REAL_FUNCTIONS = {
-  crossChainTransfer,
-  getChainBalances,
-  multiChainDeploy
-}
-
-export default REAL_FUNCTIONS`
-
-  fs.writeFileSync(path.join(targetPath, 'src/utils/realFunctions.js'), content)
-  console.log(`${colors.green}✅ Generated realFunctions.js with working blockchain integration${colors.reset}`)
 }
 
 runSetup()
