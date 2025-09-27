@@ -3,6 +3,7 @@
 const readline = require('readline')
 const fs = require('fs')
 const path = require('path')
+const { execSync } = require('child_process')
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -293,12 +294,25 @@ export default manifoldConfig`
   console.log(`${colors.green}✅ Functions generated for chains: ${config.selectedChains.join(', ')}${colors.reset}`)
   console.log(`${colors.green}✅ ${config.selectedFunctions.length} functions ready for use${colors.reset}`)
   
+  // Auto-install dependencies
+  console.log(`\n${colors.yellow}📦 Installing dependencies...${colors.reset}`)
+  try {
+    execSync('npm install', { 
+      cwd: genProjectPath, 
+      stdio: 'inherit',
+      timeout: 120000 // 2 minute timeout
+    })
+    console.log(`${colors.green}✅ Dependencies installed successfully${colors.reset}`)
+  } catch (error) {
+    console.log(`${colors.yellow}⚠️ Auto-install failed, please run 'npm install' manually${colors.reset}`)
+  }
+  
   console.log(`\n${colors.bold}🚀 Setup Complete!${colors.reset}`)
-  console.log(`${colors.blue}Your generated project is in the gen_manifold folder.${colors.reset}`)
-  console.log(`${colors.blue}Run the following commands to start your application:${colors.reset}\n`)
+  console.log(`${colors.green}Your generated project is ready with Tailwind CSS configured!${colors.reset}`)
+  console.log(`${colors.blue}To start your application:${colors.reset}\n`)
   console.log(`${colors.cyan}${colors.bold}  cd gen_manifold${colors.reset}`)
-  console.log(`${colors.cyan}${colors.bold}  npm install${colors.reset}`)
   console.log(`${colors.cyan}${colors.bold}  npm run dev${colors.reset}\n`)
+  console.log(`${colors.blue}Then open your browser to the provided localhost URL.${colors.reset}`)
 }
 
 async function generateProjectStructure(targetPath) {
@@ -312,6 +326,7 @@ async function generateProjectStructure(targetPath) {
   await generateIndexHtml(targetPath)
   await generateViteConfig(targetPath)
   await generateTailwindConfig(targetPath)
+  await generatePostCssConfig(targetPath)
   await generateMainJsx(targetPath)
   await generateCleanApp(targetPath)
   await generateComponents(targetPath)
@@ -493,6 +508,18 @@ export default {
   
   fs.writeFileSync(path.join(targetPath, 'tailwind.config.js'), content)
   console.log(`${colors.green}✅ Generated tailwind.config.js${colors.reset}`)
+}
+
+async function generatePostCssConfig(targetPath) {
+  const content = `export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}`
+  
+  fs.writeFileSync(path.join(targetPath, 'postcss.config.js'), content)
+  console.log(`${colors.green}✅ Generated postcss.config.js${colors.reset}`)
 }
 
 async function generateMainJsx(targetPath) {
