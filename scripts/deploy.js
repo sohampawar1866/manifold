@@ -3,7 +3,8 @@
 /**
  * 🚀 Kadena Multi-Chain Deployment Script
  * 
- * This script automates the entire deployment process:
+ * This      // Validate all chains are accessible
+      for (const chainId of this.config.deployment.deployToChains) {cript automates the entire deployment process:
  * 1. Validates environment setup
  * 2. Deploys contracts to all 5 Kadena chains
  * 3. Configures cross-chain communication
@@ -28,18 +29,38 @@ class KadenaDeployer {
   loadConfig() {
     const configPath = path.join(__dirname, '../deployment.config.json');
     if (fs.existsSync(configPath)) {
-      return JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      
+      // Ensure deployment section exists for backwards compatibility
+      if (!config.deployment) {
+        config.deployment = {
+          deployToChains: config.deployToChains || [20, 21, 22, 23, 24],
+          gasSettings: config.gasSettings || {
+            gasLimit: 5000000,
+            gasPrice: '20000000000'
+          },
+          confirmations: config.confirmations || 2
+        };
+      }
+      
+      return config;
     }
     
-    // Default configuration
+    // Default configuration if no setup was run
+    console.log('⚠️  No configuration found. Run "npm run setup" first for optimal settings.');
     return {
       projectName: 'My Kadena dApp',
-      contracts: [],
-      deployToChains: [20, 21, 22, 23, 24],
-      gasSettings: {
-        gasLimit: 5000000,
-        gasPrice: '20000000000' // 20 gwei
-      }
+      appType: 'simple-dapp',
+      complexity: 'single',
+      deployment: {
+        deployToChains: [20],
+        gasSettings: {
+          gasLimit: 3000000,
+          gasPrice: '15000000000'
+        },
+        confirmations: 1
+      },
+      contracts: {}
     };
   }
 
@@ -95,8 +116,8 @@ class KadenaDeployer {
       );
 
       const contract = await factory.deploy(...constructorArgs, {
-        gasLimit: this.config.gasSettings.gasLimit,
-        gasPrice: this.config.gasSettings.gasPrice
+        gasLimit: this.config.deployment.gasSettings.gasLimit,
+        gasPrice: this.config.deployment.gasSettings.gasPrice
       });
 
       await contract.waitForDeployment();
@@ -134,7 +155,7 @@ class KadenaDeployer {
       const contractCode = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
 
       // Deploy to all specified chains in parallel
-      const deploymentPromises = this.config.deployToChains.map(chainId =>
+      const deploymentPromises = this.config.deployment.deployToChains.map(chainId =>
         this.deployToChain(chainId, contractName, contractCode)
           .catch(error => ({ chainId, contractName, error: error.message }))
       );
@@ -191,7 +212,9 @@ class KadenaDeployer {
     try {
       console.log(`🌟 Kadena Multi-Chain Deployment Starting...`);
       console.log(`📱 Project: ${this.config.projectName}`);
-      console.log(`🔗 Deploying to chains: ${this.config.deployToChains.join(', ')}\n`);
+      console.log(`🎯 App Type: ${this.config.appType || 'Custom'}`);
+      console.log(`� Complexity: ${this.config.complexity || 'Unknown'}`);
+      console.log(`�🔗 Deploying to chains: ${this.config.deployment.deployToChains.join(', ')}\n`);
 
       await this.validateEnvironment();
       await this.deployAllContracts();

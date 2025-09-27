@@ -1,251 +1,312 @@
 #!/usr/bin/env node
 
 /**
- * 🛠️ Kadena Template Setup Wizard
+ * 🧙‍♂️ Enhanced Kadena Multi-Chain Setup Wizard
  * 
- * Interactive CLI that helps developers:
- * 1. Clone and customize the template
- * 2. Configure their project settings
- * 3. Set up wallet and environment
- * 4. Deploy their first contracts
+ * This wizard helps developers create Kadena multi-chain applications with:
+ * 1. Guided setup based on app type (DeFi, NFT, Gaming, etc.)  
+ * 2. Manual setup for custom configurations
+ * 3. Dynamic component generation based on complexity
+ * 4. Interactive playground creation
  */
 
 import inquirer from 'inquirer';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import { APP_TYPES, COMPLEXITY_LEVELS, getAppType, getComplexityLevel } from '../src/config/app-types.js';
+import { TemplateConfigGenerator } from '../src/config/template-generator.js';
 
 class KadenaSetupWizard {
   constructor() {
     this.config = {};
+    this.setupType = null;
+    this.templateGenerator = new TemplateConfigGenerator();
   }
 
   async welcome() {
     console.log(`
-🌟 Welcome to Kadena Multi-Chain dApp Template Setup!
+🌟 Welcome to the Enhanced Kadena Multi-Chain Template Generator!
 
-This wizard will help you:
-✅ Configure your project settings
-✅ Set up wallet connection
-✅ Choose which chains to deploy to
-✅ Configure your smart contracts
-✅ Deploy everything with one command
+This wizard will help you create a customized multi-chain application 
+that adapts to your specific use case and complexity needs.
 
-Let's get started! 🚀
+Choose between:
+• 🎯 Guided Setup: Get recommendations based on your app type
+• ⚙️  Manual Setup: Full control over chain selection and features
 `);
   }
 
-  async gatherProjectInfo() {
-    console.log('📝 Project Information\n');
+  async chooseSetupType() {
+    const { setupType } = await inquirer.prompt([{
+      type: 'list',
+      name: 'setupType',
+      message: '🚀 How would you like to set up your project?',
+      choices: [
+        { name: '🎯 Guided Setup (Recommended for most users)', value: 'guided' },
+        { name: '⚙️  Manual Setup (Advanced users)', value: 'manual' }
+      ]
+    }]);
     
-    const answers = await inquirer.prompt([
+    this.setupType = setupType;
+  }
+
+  async runGuidedSetup() {
+    console.log('\n🎯 Guided Setup - We\'ll recommend the best configuration for your app type\n');
+    
+    // Get app type
+    const appTypeChoices = Object.keys(APP_TYPES).map(key => ({
+      name: `${APP_TYPES[key].icon} ${APP_TYPES[key].name} - ${APP_TYPES[key].description}`,
+      value: key
+    }));
+
+    const { appType } = await inquirer.prompt([{
+      type: 'list',
+      name: 'appType',
+      message: '🏗️  What type of application are you building?',
+      choices: appTypeChoices
+    }]);
+
+    // Get project details
+    const { projectName, author } = await inquirer.prompt([
       {
         type: 'input',
         name: 'projectName',
-        message: 'What is your project name?',
-        default: 'My Kadena dApp',
-        validate: input => input.length > 0 || 'Project name is required'
-      },
-      {
-        type: 'input',
-        name: 'description',
-        message: 'Project description:',
-        default: 'A multi-chain dApp built on Kadena Chainweb EVM'
+        message: '📝 Project name:',
+        default: `kadena-${appType}-app`
       },
       {
         type: 'input',
         name: 'author',
-        message: 'Your name/organization:',
-        default: 'Your Name'
+        message: '👤 Author name:',
+        default: 'Developer'
       }
     ]);
 
-    this.config = { ...this.config, ...answers };
+    // Show recommendation
+    const selectedAppType = getAppType(appType);
+    const complexity = getComplexityLevel(selectedAppType.complexity);
+    
+    console.log(`\n📊 Based on your app type, we recommend:
+   🔗 Complexity: ${complexity.name}
+   ⛓️  Chains: ${selectedAppType.recommendedChains.join(', ')}
+   💡 Reasoning: ${selectedAppType.reasoning}
+`);
+
+    const { confirm } = await inquirer.prompt([{
+      type: 'confirm',
+      name: 'confirm',
+      message: '✅ Does this look good?',
+      default: true
+    }]);
+
+    if (!confirm) {
+      console.log('👍 No problem! Let\'s try manual setup instead...');
+      await this.runManualSetup();
+      return;
+    }
+
+    // Generate configuration
+    this.config = this.templateGenerator.generateGuidedConfig(appType, projectName, author);
   }
 
-  async selectChains() {
-    console.log('\n🔗 Chain Selection\n');
+  async runManualSetup() {
+    console.log('\n⚙️  Manual Setup - Full control over your configuration\n');
     
-    const { deployToChains } = await inquirer.prompt([
+    // Select chains
+    const availableChains = [20, 21, 22, 23, 24];
+    const { selectedChains } = await inquirer.prompt([{
+      type: 'checkbox',
+      name: 'selectedChains',
+      message: '⛓️  Select chains to deploy to:',
+      choices: availableChains.map(id => ({
+        name: `Chain ${id} (Network ID: ${5920 + id - 20})`,
+        value: id
+      })),
+      validate: input => input.length > 0 ? true : 'Please select at least one chain'
+    }]);
+
+    // Select features
+    const availableFeatures = [
+      'wallet-connection',
+      'multi-chain-balances', 
+      'cross-chain-transfers',
+      'contract-interaction',
+      'transaction-history',
+      'chain-analytics'
+    ];
+
+    const { selectedFeatures } = await inquirer.prompt([{
+      type: 'checkbox',
+      name: 'selectedFeatures',
+      message: '🎯 Select features to include:',
+      choices: availableFeatures.map(feature => ({
+        name: feature.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        value: feature
+      })),
+      default: ['wallet-connection', 'multi-chain-balances']
+    }]);
+
+    // Get project details  
+    const { projectName, author, description } = await inquirer.prompt([
       {
-        type: 'checkbox',
-        name: 'deployToChains',
-        message: 'Which Kadena chains do you want to deploy to?',
-        choices: [
-          { name: 'Chain 20 (Primary)', value: 20, checked: true },
-          { name: 'Chain 21', value: 21, checked: true },
-          { name: 'Chain 22', value: 22, checked: true },
-          { name: 'Chain 23', value: 23, checked: true },
-          { name: 'Chain 24', value: 24, checked: true }
-        ],
-        validate: input => input.length > 0 || 'Select at least one chain'
+        type: 'input',
+        name: 'projectName',
+        message: '📝 Project name:',
+        default: 'kadena-multi-chain-app'
+      },
+      {
+        type: 'input',
+        name: 'author',
+        message: '👤 Author name:',
+        default: 'Developer'
+      },
+      {
+        type: 'input',
+        name: 'description',
+        message: '📄 Project description:',
+        default: 'A custom Kadena multi-chain application'
       }
     ]);
 
-    this.config.deployment = {
-      deployToChains,
-      gasSettings: {
-        gasLimit: 5000000,
-        gasPrice: "20000000000"
-      },
-      confirmations: 2
-    };
+    // Generate configuration
+    this.config = this.templateGenerator.generateManualConfig(
+      selectedChains,
+      selectedFeatures,
+      { projectName, author, description }
+    );
   }
 
   async configureWallet() {
     console.log('\n💼 Wallet Configuration\n');
     
-    const { walletSetup } = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'walletSetup',
-        message: 'How do you want to set up your wallet?',
-        choices: [
-          { name: 'I\'ll provide my private key via environment variable', value: 'private_key' },
-          { name: 'I\'ll provide my mnemonic phrase via environment variable', value: 'mnemonic' },
-          { name: 'I\'ll set it up later', value: 'later' }
-        ]
-      }
-    ]);
+    const { walletType } = await inquirer.prompt([{
+      type: 'list',
+      name: 'walletType',
+      message: '🔐 How will you provide wallet credentials?',
+      choices: [
+        { name: '🔑 Private Key (for development)', value: 'private_key' },
+        { name: '🌱 Mnemonic Phrase (more secure)', value: 'mnemonic' },
+        { name: '🎩 Zellic X1 Wallet (coming soon)', value: 'x1_wallet' }
+      ]
+    }]);
 
-    if (walletSetup !== 'later') {
-      console.log(`
-⚠️  IMPORTANT: For security, never commit your private key or mnemonic to git!
-
-Create a .env file in your project root with:
-${walletSetup === 'private_key' ? 'PRIVATE_KEY=your_private_key_here' : 'MNEMONIC=your_mnemonic_phrase_here'}
-
-The .env file is already in .gitignore for your safety.
-`);
+    this.config.wallet = { type: walletType };
+    
+    if (walletType === 'x1_wallet') {
+      console.log('ℹ️  X1 Wallet integration coming soon! Using private key for now.');
+      this.config.wallet.type = 'private_key';
     }
-
-    this.config.wallet = {
-      requiredNetworks: this.config.deployment.deployToChains.map(chain => 5920 + chain - 20),
-      autoAddNetworks: true
-    };
   }
 
-  async configureContracts() {
-    console.log('\n📄 Smart Contract Configuration\n');
+  async generateComponents() {
+    console.log('\n🏗️  Generating React components...');
     
-    const contractsDir = path.join(__dirname, '../src/contracts');
-    let contractFiles = [];
-    
-    if (fs.existsSync(contractsDir)) {
-      contractFiles = fs.readdirSync(contractsDir)
-        .filter(file => file.endsWith('.sol') || file.endsWith('.json'));
+    try {
+      // Generate components using the template generator
+      await this.templateGenerator.generateComponentFiles('./src');
+      
+      console.log('   ✅ Generated App.jsx');
+      console.log('   ✅ Generated dashboard component');
+      console.log('   ✅ Generated complexity-specific components');
+      console.log('   🎯 Component generation complete!');
+    } catch (error) {
+      console.error('⚠️  Component generation failed:', error.message);
+      console.log('   You can still run the setup manually after fixing any issues.');
     }
-
-    if (contractFiles.length === 0) {
-      console.log('ℹ️  No contracts found. You can add them later to src/contracts/');
-      this.config.contracts = {};
-      return;
-    }
-
-    console.log(`Found contracts: ${contractFiles.join(', ')}`);
-    
-    const { enabledFeatures } = await inquirer.prompt([
-      {
-        type: 'checkbox',
-        name: 'enabledFeatures',
-        message: 'Which features do you want to enable in your frontend?',
-        choices: [
-          { name: 'Cross-chain transfers', value: 'crossChainTransfers', checked: true },
-          { name: 'Multi-chain balance display', value: 'multiChainBalances', checked: true },
-          { name: 'Contract interaction UI', value: 'contractInteraction', checked: true }
-        ]
-      }
-    ]);
-
-    this.config.frontend = {
-      defaultChain: this.config.deployment.deployToChains[0],
-      enabledFeatures: {
-        crossChainTransfers: enabledFeatures.includes('crossChainTransfers'),
-        multiChainBalances: enabledFeatures.includes('multiChainBalances'),
-        contractInteraction: enabledFeatures.includes('contractInteraction')
-      }
-    };
-
-    // For now, set up default contract config
-    this.config.contracts = {};
-    contractFiles.forEach(file => {
-      const contractName = path.basename(file, path.extname(file));
-      this.config.contracts[contractName] = {
-        constructorArgs: [],
-        deployToChains: this.config.deployment.deployToChains,
-        verify: true
-      };
-    });
   }
 
   async saveConfiguration() {
-    const configPath = path.join(__dirname, '../deployment.config.json');
+    const configPath = './deployment.config.json';
+    
+    // Set the config in template generator for component generation
+    this.templateGenerator.config = this.config;
+    
+    // Save configuration file
     fs.writeFileSync(configPath, JSON.stringify(this.config, null, 2));
-    console.log('✅ Configuration saved to deployment.config.json');
+    console.log(`\n💾 Configuration saved to ${configPath}`);
   }
 
   async createEnvTemplate() {
-    const envPath = path.join(__dirname, '../.env.example');
-    const envContent = `# Kadena Multi-Chain dApp Environment Variables
-# Copy this file to .env and fill in your values
+    const envExample = `# 🔐 Kadena Wallet Configuration
+# Copy this file to .env and fill in your credentials
 
-# Wallet Configuration (choose one)
-# PRIVATE_KEY=your_private_key_here
-# MNEMONIC=your_mnemonic_phrase_here
+# Option 1: Private Key (for development)
+PRIVATE_KEY=your_private_key_here
 
-# Optional: Custom RPC endpoints
-# KADENA_CHAIN_20_RPC=https://your-custom-rpc.com
-# KADENA_CHAIN_21_RPC=https://your-custom-rpc.com
+# Option 2: Mnemonic Phrase (more secure)
+# MNEMONIC=your twelve word mnemonic phrase here
 
-# Optional: Deployment settings
-# GAS_LIMIT=5000000
-# GAS_PRICE=20000000000
+# 🌐 Network Configuration
+KADENA_NETWORK=testnet
+KADENA_CHAIN_ID=20
+
+# 🚀 Deployment Settings
+GAS_LIMIT=10000
+GAS_PRICE=0.000001
+
+# 🎯 Your Selected Chains
+DEPLOY_CHAINS=${this.config.deployment.deployToChains.join(',')}
 `;
 
-    fs.writeFileSync(envPath, envContent);
-    console.log('✅ Created .env.example template');
+    fs.writeFileSync('.env.example', envExample);
+    console.log('📝 Created .env.example template');
+  }
+
+  getDashboardFileName() {
+    const names = {
+      single: 'SingleChainDashboard',
+      dual: 'DualChainDashboard', 
+      triple: 'TripleChainDashboard',
+      quad: 'QuadChainDashboard',
+      full: 'FullEcosystemDashboard'
+    };
+    return names[this.config.complexity] || 'Dashboard';
   }
 
   async showNextSteps() {
-    console.log(`
-🎉 Setup Complete! Your Kadena multi-chain dApp is configured.
-
-📋 Next Steps:
-
-1. 💼 Set up your wallet:
-   Create a .env file with your PRIVATE_KEY or MNEMONIC
-
-2. 🔨 Add your smart contracts:
-   Place your .sol files in src/contracts/
-
-3. 📦 Compile contracts (if needed):
-   npm run compile-contracts
-
-4. 🚀 Deploy to all chains:
-   npm run deploy
-
-5. 🧪 Test your deployment:
-   npm run test-deployment
-
-6. 💻 Start development:
-   npm run dev
-
-🆘 Need help? Check README.md for detailed guides and troubleshooting.
-
-Happy building on Kadena! 🌟
-`);
+    const complexity = this.config.complexity;
+    const chainCount = this.config.deployment.deployToChains.length;
+    
+    console.log('\n\n🎉 Setup Complete!\n\n' +
+      '📊 Configuration Summary:\n' +
+      '   🎯 App Type: ' + (this.config.appType === 'custom' ? 'Custom' : this.config.appType) + '\n' +
+      '   🔗 Complexity: ' + COMPLEXITY_LEVELS[complexity].name + ' (' + chainCount + ' chain' + (chainCount > 1 ? 's' : '') + ')\n' +
+      '   ⛓️  Chains: ' + this.config.deployment.deployToChains.join(', ') + '\n' +
+      '   💰 Estimated Cost: ' + this.config.features.estimatedCost + '\n\n' +
+      '📋 Next Steps:\n\n' +
+      '1. 💼 Set up your wallet:\n' +
+      '   Create a .env file with your PRIVATE_KEY or MNEMONIC\n\n' +
+      '2. 🚀 Deploy to ' + chainCount + ' chain' + (chainCount > 1 ? 's' : '') + ':\n' +
+      '   npm run deploy\n\n' +
+      '3. 🎮 Try the interactive playground:\n' +
+      '   npm run dev\n\n' +
+      '4. 🔨 Add your smart contracts:\n' +
+      '   Place your .sol files in src/contracts/\n\n' +
+      '5. 🧪 Test everything:\n' +
+      '   npm run test-deployment\n\n' +
+      '🎯 Your template includes:\n' +
+      this.config.frontend.components.map(comp => '   ✅ ' + comp).join('\n') + '\n\n' +
+      '🎮 Interactive playground features:\n' +
+      this.config.frontend.playground.features.map(feat => '   🎯 ' + feat.replace('-', ' ')).join('\n') + '\n\n' +
+      '🆘 Need help? Check README.md for detailed guides and troubleshooting.\n\n' +
+      'Happy building on Kadena! 🌟'
+    );
   }
 
   async run() {
     try {
       await this.welcome();
-      await this.gatherProjectInfo();
-      await this.selectChains();
+      await this.chooseSetupType();
+      
+      if (this.setupType === 'guided') {
+        await this.runGuidedSetup();
+      } else {
+        await this.runManualSetup();
+      }
+      
       await this.configureWallet();
-      await this.configureContracts();
       await this.saveConfiguration();
+      await this.generateComponents();
       await this.createEnvTemplate();
       await this.showNextSteps();
     } catch (error) {
