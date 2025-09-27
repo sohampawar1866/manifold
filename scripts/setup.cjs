@@ -1009,7 +1009,9 @@ async function generateComponents(targetPath) {
 }
 
 async function generateIndexCss(targetPath) {
-  const cssContent = `@import "tailwindcss";
+  const cssContent = `@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 @layer base {
   /* CSS Variables: Light Theme */
