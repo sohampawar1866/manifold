@@ -14,7 +14,7 @@ export const CHAINWEB_EVM_TESTNET_CHAINS = {
       decimals: 18
     },
     testnet: true,
-    icon: '🔗'
+    icon: 'CHAIN_20'
   },
   21: {
     chainId: 5921,
@@ -28,7 +28,7 @@ export const CHAINWEB_EVM_TESTNET_CHAINS = {
       decimals: 18
     },
     testnet: true,
-    icon: '⛓️'
+    icon: 'CHAIN_21'
   },
   22: {
     chainId: 5922,
@@ -42,7 +42,7 @@ export const CHAINWEB_EVM_TESTNET_CHAINS = {
       decimals: 18
     },
     testnet: true,
-    icon: '🌐'
+    icon: 'CHAIN_22'
   },
   23: {
     chainId: 5923,
@@ -56,7 +56,7 @@ export const CHAINWEB_EVM_TESTNET_CHAINS = {
       decimals: 18
     },
     testnet: true,
-    icon: '🚀'
+    icon: 'CHAIN_23'
   },
   24: {
     chainId: 5924,
@@ -70,7 +70,7 @@ export const CHAINWEB_EVM_TESTNET_CHAINS = {
       decimals: 18
     },
     testnet: true,
-    icon: '⚡'
+    icon: 'CHAIN_24'
   }
 }
 

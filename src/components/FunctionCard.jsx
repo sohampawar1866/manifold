@@ -107,13 +107,13 @@ console.log(result)`
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-swagger border border-gray-200 overflow-hidden function-card-hover">
+    <div className="card-container function-card-hover mb-6 animate-fade-in">
       {/* Header */}
-      <div className="p-6 border-b border-gray-100">
+      <div className="p-8 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center space-x-3 mb-2">
-              <h3 className="text-xl font-bold text-gray-800">
+              <h3 className="text-2xl font-bold text-slate-800 tracking-tight">
                 {functionData.title}
               </h3>
               <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -125,9 +125,9 @@ console.log(result)`
               </span>
             </div>
             
-            <p className="text-gray-600 mb-3">{functionData.description}</p>
+            <p className="text-slate-600 mb-4 leading-relaxed">{functionData.description}</p>
             
-            <div className="flex items-center space-x-4 text-sm">
+            <div className="flex items-center flex-wrap gap-4 text-sm">
               <span className={`px-2 py-1 rounded ${getComplexityColor(functionData.complexity)}`}>
                 {functionData.complexity}
               </span>
@@ -145,7 +145,7 @@ console.log(result)`
           
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+            className="p-3 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all duration-200 hover:scale-105"
           >
             {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
           </button>
@@ -157,25 +157,32 @@ console.log(result)`
         <div className="border-b border-gray-100">
           {/* Parameters */}
           {functionData.parameters && functionData.parameters.length > 0 && (
-            <div className="p-6">
-              <h4 className="font-semibold text-gray-800 mb-4">Parameters</h4>
-              <div className="space-y-4">
+            <div className="p-8 bg-slate-50/50">
+              <h4 className="font-semibold text-slate-800 mb-6 text-lg flex items-center">
+                <svg className="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                </svg>
+                Parameters
+              </h4>
+              <div className="space-y-6">
                 {functionData.parameters.map((param, index) => (
-                  <div key={index} className="space-y-2">
+                  <div key={index} className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
                     <label className="block">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="font-medium text-gray-700">{param.name}</span>
-                        <span className="text-xs text-gray-500">({param.type})</span>
-                        {param.required && (
-                          <span className="text-xs text-red-500">*</span>
-                        )}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-semibold text-slate-700">{param.name}</span>
+                          {param.required && (
+                            <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-full font-medium">Required</span>
+                          )}
+                        </div>
+                        <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full font-mono">{param.type}</span>
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">{param.description}</p>
+                      <p className="text-sm text-slate-600 mb-3 leading-relaxed">{param.description}</p>
                       
                       {param.type === 'array' ? (
                         <select
                           multiple
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="input-primary w-full min-h-[100px]"
                           value={parameters[param.name] || []}
                           onChange={(e) => {
                             const values = Array.from(e.target.selectedOptions, option => parseInt(option.value))
@@ -190,7 +197,7 @@ console.log(result)`
                         </select>
                       ) : param.type === 'number' && param.name.includes('Chain') ? (
                         <select
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="input-primary w-full"
                           value={parameters[param.name] || ''}
                           onChange={(e) => handleParameterChange(param.name, parseInt(e.target.value))}
                         >
@@ -204,7 +211,7 @@ console.log(result)`
                       ) : (
                         <input
                           type={param.type === 'number' ? 'number' : 'text'}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="input-primary w-full"
                           placeholder={`Enter ${param.name}...`}
                           value={parameters[param.name] || ''}
                           onChange={(e) => handleParameterChange(param.name, param.type === 'number' ? parseInt(e.target.value) : e.target.value)}
@@ -219,8 +226,13 @@ console.log(result)`
 
           {/* Execution Result */}
           {executionResult && (
-            <div className="p-6 border-t border-gray-100">
-              <h4 className="font-semibold text-gray-800 mb-3">Result</h4>
+            <div className="p-8 border-t border-slate-100 bg-slate-50/30">
+              <h4 className="font-semibold text-slate-800 mb-4 text-lg flex items-center">
+                <svg className="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+                Execution Result
+              </h4>
               <div className={`p-4 rounded-lg ${
                 executionResult.error 
                   ? 'bg-red-50 border border-red-200' 
@@ -239,9 +251,11 @@ console.log(result)`
                     <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
                     <div className="flex-1">
                       <p className="font-medium text-green-800 mb-2">Execution Successful</p>
-                      <pre className="text-sm text-green-700 bg-green-100 p-3 rounded overflow-x-auto">
-                        {JSON.stringify(executionResult, null, 2)}
-                      </pre>
+                      <div className="code-block mt-3">
+                        <pre className="text-sm overflow-x-auto">
+                          {JSON.stringify(executionResult, null, 2)}
+                        </pre>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -252,13 +266,13 @@ console.log(result)`
       )}
 
       {/* Action Buttons */}
-      <div className="p-6 bg-gray-50">
+      <div className="p-8 bg-gradient-to-r from-slate-50 to-slate-100/50 border-t">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <button
               onClick={handleExecute}
               disabled={isExecuting}
-              className="flex items-center space-x-2 px-4 py-2 bg-swagger-green text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="btn-primary flex items-center space-x-2"
             >
               {isExecuting ? (
                 <Clock className="w-4 h-4 animate-spin" />
@@ -270,7 +284,7 @@ console.log(result)`
             
             <button
               onClick={() => setShowCode(!showCode)}
-              className="flex items-center space-x-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              className="btn-secondary flex items-center space-x-2"
             >
               <Code className="w-4 h-4" />
               {showCode ? 'Hide Code' : 'View Code'}
@@ -280,7 +294,7 @@ console.log(result)`
           <div className="flex items-center space-x-2">
             <button
               onClick={copyExample}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+              className="p-3 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all duration-200 hover:scale-105"
               title="Copy example usage"
             >
               <Copy className="w-4 h-4" />
@@ -291,7 +305,7 @@ console.log(result)`
                 href={chainConfigs[0].blockExplorer}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+                className="p-3 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all duration-200 hover:scale-105"
                 title="View on block explorer"
               >
                 <ExternalLink className="w-4 h-4" />
@@ -302,14 +316,19 @@ console.log(result)`
 
         {/* Code Display */}
         {showCode && (
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="flex items-center justify-between mb-3">
+          <div className="mt-6 pt-6 border-t border-slate-200">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
-                <h5 className="font-medium text-gray-700">Generated Code</h5>
+                <h5 className="font-semibold text-slate-800 flex items-center">
+                  <svg className="w-4 h-4 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                  </svg>
+                  Generated Code
+                </h5>
                 <select
                   value={codeFormat}
                   onChange={(e) => setCodeFormat(e.target.value)}
-                  className="text-sm border border-gray-300 rounded px-2 py-1"
+                  className="text-sm border border-slate-300 rounded-lg px-3 py-1.5 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="javascript">JavaScript</option>
                   <option value="typescript">TypeScript</option>
@@ -319,7 +338,7 @@ console.log(result)`
               
               <button
                 onClick={copyCode}
-                className="flex items-center space-x-1 px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                className="flex items-center space-x-1 px-3 py-1 text-sm btn-primary"
               >
                 <Copy className="w-3 h-3" />
                 Copy
