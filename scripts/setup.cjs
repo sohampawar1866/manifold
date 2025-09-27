@@ -383,7 +383,6 @@ async function generateProjectStructure(targetPath) {
   await generateComponents(targetPath)
   await generateHooks(targetPath)
   await generateUtils(targetPath)
-  await generateRealFunctionTemplates(targetPath)
   await generateIndexCss(targetPath)
   await generateReadme(targetPath)
   
@@ -602,21 +601,16 @@ async function generateCleanApp(targetPath) {
   
   const content = `import React, { useState, useEffect } from 'react'
 import { toast } from 'react-hot-toast'
-import { ethers } from 'ethers'
-import { Code, Zap, BookOpen, Wallet, AlertCircle } from 'lucide-react'
+import { Code, Zap, BookOpen } from 'lucide-react'
 import FunctionCard from './components/FunctionCard'
 import { useFunctionGenerator } from './hooks/useFunctionGenerator'
 import { useChainConfig } from './hooks/useChainConfig'
-import { useWallet } from './hooks/useWallet'
-import { NetworkManager } from './utils/networkManager'
-import { crossChainTransfer, getChainBalances, multiChainDeploy } from './utils/realFunctions'
 import manifoldConfig from './manifold.config.js'
 
 function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [executingFunctions, setExecutingFunctions] = useState({})
-  const [filteredFunctions, setFilteredFunctions] = useState([])
   
   const chainConfig = useChainConfig(manifoldConfig.selectedChains)
   const functionGen = useFunctionGenerator(
@@ -624,17 +618,8 @@ function App() {
     manifoldConfig.selectedFunctions, 
     manifoldConfig.useCase
   )
-  
-  const { 
-    account, 
-    isConnected, 
-    chainId,
-    connectWallet, 
-    disconnectWallet, 
-    switchToChain,
-    balance,
-    isConnecting 
-  } = useWallet()
+
+  const [filteredFunctions, setFilteredFunctions] = useState([])
 
   useEffect(() => {
     // Load configuration and initialize app
@@ -682,17 +667,13 @@ function App() {
   }, [functionGen.generatedFunctions, searchTerm])
 
   const handleFunctionExecute = async (functionName, parameters) => {
-    // Check wallet connection first
-    if (!isConnected) {
-      toast.error('Please connect your wallet first')
-      return
-    }
-
     setExecutingFunctions(prev => ({ ...prev, [functionName]: true }))
     
     try {
-      let result
+      // Simulate function execution
+      await new Promise(resolve => setTimeout(resolve, 2000))
       
+<<<<<<< Updated upstream
       // Get wallet signer for transactions
       const provider = new ethers.BrowserProvider(window.ethereum)
       const signer = await provider.getSigner()
@@ -729,18 +710,26 @@ function App() {
           const networkManager = new NetworkManager()
           result = await networkManager.executeTransaction(functionName, parameters)
           break
+=======
+      const mockResult = {
+        success: true,
+        functionName,
+        parameters,
+        result: {
+          txHash: '0xabc123def456789...',
+          blockNumber: Math.floor(Math.random() * 1000000) + 12345,
+          gasUsed: '21000',
+          timestamp: new Date().toISOString(),
+          chainId: parameters.fromChain || parameters.chain || manifoldConfig.selectedChains[0] || 20
+        }
+>>>>>>> Stashed changes
       }
       
-      if (result && result.success) {
-        toast.success(\`\${functionName} executed successfully!\`)
-        return result
-      } else {
-        throw new Error(result?.error || 'Transaction failed')
-      }
+      toast.success(\`\${functionName} executed successfully!\`)
+      return mockResult
     } catch (error) {
       console.error('Function execution failed:', error)
-      const errorMsg = error.message || 'Unknown error occurred'
-      toast.error(\`Execution failed: \${errorMsg}\`)
+      toast.error('Execution failed: ' + error.message)
       throw error
     } finally {
       setExecutingFunctions(prev => ({ ...prev, [functionName]: false }))
@@ -859,78 +848,6 @@ function App() {
         </div>
       </header>
 
-      {/* Wallet Connection Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="card-container p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center space-x-3">
-              <div className={\`w-3 h-3 rounded-full \${isConnected ? 'bg-green-500' : 'bg-red-500'}\`}></div>
-              <div>
-                <h3 className="font-semibold text-slate-800">
-                  Wallet Status: {isConnected ? 'Connected' : 'Disconnected'}
-                </h3>
-                {isConnected && (
-                  <div className="text-sm text-slate-600">
-                    <p>Account: {account?.slice(0, 6)}...{account?.slice(-4)}</p>
-                    <p>Network: {network ? \`Chain \${network.chainId}\` : 'Unknown'}</p>
-                    <p>Balance: {balance} KDA</p>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              {!isConnected ? (
-                <button
-                  onClick={connectWallet}
-                  disabled={isConnecting}
-                  className="btn-primary flex items-center space-x-2"
-                >
-                  <Wallet className="w-4 h-4" />
-                  <span>{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
-                </button>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <select
-                    value={chainId || ''}
-                    onChange={(e) => {
-                      const selectedChainId = parseInt(e.target.value)
-                      // Convert chainId to chain number (5920 -> 20, 5921 -> 21, etc.)
-                      const chainNumber = selectedChainId - 5900
-                      switchToChain(chainNumber)
-                    }}
-                    className="input-primary text-sm"
-                  >
-                    <option value="">Select Chain</option>
-                    <option value="5920">Chain 20</option>
-                    <option value="5921">Chain 21</option>
-                    <option value="5922">Chain 22</option>
-                    <option value="5923">Chain 23</option>
-                    <option value="5924">Chain 24</option>
-                  </select>
-                  <button
-                    onClick={disconnectWallet}
-                    className="btn-secondary text-sm"
-                  >
-                    Disconnect
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          {!isConnected && (
-            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start space-x-3">
-              <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-yellow-800">
-                <p className="font-medium mb-1">Wallet Required</p>
-                <p>Connect your MetaMask wallet to execute blockchain functions on Kadena Chainweb EVM networks.</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
       {/* Configuration Summary Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="card-container p-6 mb-8">
@@ -1027,9 +944,12 @@ function App() {
                 chainConfigs={chainConfig.chainConfigs || []}
                 onExecute={handleFunctionExecute}
                 isExecuting={executingFunctions[functionData.name] || false}
+<<<<<<< Updated upstream
                 walletConnected={isConnected}
                 currentAccount={account}
                 currentNetwork={network}
+=======
+>>>>>>> Stashed changes
               />
             ))
           ) : functionGen.isGenerating ? (
@@ -1316,10 +1236,6 @@ async function generateHooks(targetPath) {
       console.log(`${colors.green}✅ Copied ${file}${colors.reset}`)
     }
   })
-  
-  // Generate real wallet connection hook
-  await generateWalletHook(targetPath)
-  await generateNetworkManager(targetPath)
 }
 
 async function generateReadme(targetPath) {
@@ -1427,6 +1343,7 @@ async function generateUtils(targetPath) {
   })
 }
 
+<<<<<<< Updated upstream
 async function generateWalletHook(targetPath) {
   const content = `import { useState, useEffect, useCallback } from 'react'
 import { ethers } from 'ethers'
@@ -2113,4 +2030,6 @@ export default REAL_FUNCTIONS`
   console.log(`${colors.green}✅ Generated realFunctions.js with working blockchain integration${colors.reset}`)
 }
 
+=======
+>>>>>>> Stashed changes
 runSetup()
