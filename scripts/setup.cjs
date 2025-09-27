@@ -5,7 +5,7 @@ const fs = require('fs')
 const path = require('path')
 const { execSync } = require('child_process')
 const { copyFolderRecursiveSync } = require('./utils.cjs')
-const { generateRealFunctions } = require('./generateFunctions')
+const { generateRealFunctions } = require('./generateFunctions.cjs')
 
 const rl = readline.createInterface({
   input: process.stdin,
