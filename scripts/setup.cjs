@@ -1432,10 +1432,8 @@ import { ethers } from 'ethers'
 import toast from 'react-hot-toast'
 
 // Kadena Chainweb EVM Networks
-class NetworkManager {
-  constructor() {
-    this.networks = {
-      20: {
+const KADENA_NETWORKS = {
+  20: {
     chainId: '0x1720', // 5920 in hex
     chainName: 'Kadena Chainweb EVM Chain 20',
     rpcUrls: ['https://erpc.testnet.chainweb.com/chain-20'],
@@ -1847,19 +1845,13 @@ export default networkManager`
 }
 
 async function generateRealFunctionTemplates(targetPath) {
-  // Read the template file
-  const templatePath = path.join(__dirname, 'realFunctions.template.js')
-  if (!fs.existsSync(templatePath)) {
-    console.error(`${colors.yellow}⚠️ Template file not found. Using fallback template.${colors.reset}`)
-    const content = `// Real Working Function Templates for Kadena Chainweb EVM
+  const content = `// Real Working Function Templates for Kadena Chainweb EVM
 import { ethers } from 'ethers'
 import networkManager from './networkManager'
 import toast from 'react-hot-toast'
 
 // Kadena Chainweb EVM Network Configuration
-class NetworkManager {
-  constructor() {
-    this.networks = {
+const KADENA_NETWORKS = {
   20: {
     chainId: 5920,
     rpcUrl: 'https://erpc.testnet.chainweb.com/chain-20',
@@ -1894,26 +1886,6 @@ class NetworkManager {
     }
   }
 }
-
-export const networkManager = new NetworkManager()
-export default networkManager
-
-  async sendTransaction(chain, signer, tx) {
-    // Implementation
-  }
-
-  async getBalanceMultiChain(chains, address) {
-    // Implementation
-  }
-
-  getExplorerUrl(chain, hash) {
-    return `${this.networks[chain].explorer}tx/${hash}`
-  }
-}
-
-// Create and export singleton instance
-export const networkManager = new NetworkManager()
-export default networkManager
 
 export async function crossChainTransfer(fromChain, toChain, amount, recipient, signer) {
   console.log('🔄 crossChainTransfer called with:', { fromChain, toChain, amount, recipient, signer: !!signer })
