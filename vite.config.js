@@ -17,5 +17,9 @@ export default defineConfig({
     alias: {
       '@': '/src'
     }
+  },
+  define: {
+    'process.env': {},
+    global: {},
   }
 })
