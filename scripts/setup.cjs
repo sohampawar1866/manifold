@@ -608,7 +608,7 @@ import FunctionCard from './components/FunctionCard'
 import { useFunctionGenerator } from './hooks/useFunctionGenerator'
 import { useChainConfig } from './hooks/useChainConfig'
 import { useWallet } from './hooks/useWallet'
-import { NetworkManager } from './utils/networkManager'
+import networkManager from './utils/networkManager'
 import { crossChainTransfer, getChainBalances, multiChainDeploy } from './utils/realFunctions'
 import manifoldConfig from './manifold.config.js'
 
@@ -726,7 +726,6 @@ function App() {
           break
         default:
           // For other functions, create a generic blockchain interaction
-          const networkManager = new NetworkManager()
           result = await networkManager.executeTransaction(functionName, parameters)
           break
       }
@@ -1686,7 +1685,7 @@ async function generateNetworkManager(targetPath) {
 import toast from 'react-hot-toast'
 
 // Real blockchain interaction utilities for Kadena Chainweb EVM
-export class NetworkManager {
+class NetworkManager {
   constructor() {
     this.providers = {}
     this.networks = {
@@ -1848,7 +1847,7 @@ export default networkManager`
 async function generateRealFunctionTemplates(targetPath) {
   const content = `// Real Working Function Templates for Kadena Chainweb EVM
 import { ethers } from 'ethers'
-import { NetworkManager } from './networkManager'
+import networkManager from './networkManager'
 import toast from 'react-hot-toast'
 
 // Kadena Chainweb EVM Network Configuration
@@ -1965,8 +1964,6 @@ export async function crossChainTransfer(fromChain, toChain, amount, recipient, 
 export async function getChainBalances(address, chainNumbers, signer = null) {
   console.log('🔍 getChainBalances called with:', { address, chainNumbers, signer: !!signer })
   
-  const networkManager = new NetworkManager()
-  
   try {
     if (!address) {
       throw new Error('Wallet address is required. Please enter an address to check balances.')
@@ -2015,8 +2012,6 @@ export async function getChainBalances(address, chainNumbers, signer = null) {
 }
 
 export async function multiChainDeploy(chains, contractBytecode, constructorArgs = [], signer) {
-  const networkManager = new NetworkManager()
-  
   if (!signer) {
     throw new Error('Wallet not connected. Please connect your wallet first.')
   }
