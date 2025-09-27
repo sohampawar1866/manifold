@@ -585,8 +585,6 @@ function App() {
     isConnecting 
   } = useWallet()
 
-  const [filteredFunctions, setFilteredFunctions] = useState([])
-
   useEffect(() => {
     // Load configuration and initialize app
     const initializeApp = async () => {
@@ -651,19 +649,18 @@ function App() {
       // Route to appropriate real function based on function name
       switch (functionName) {
         case 'crossChainTransfer':
-          console.log('🔄 Executing crossChainTransfer with parameters:', parameters)
           result = await crossChainTransfer(
-            parameters.fromChain || 20, // Default to chain 20 if not specified
-            parameters.toChain || 21,   // Default to chain 21 if not specified
-            parameters.amount || '0.01', // Default to 0.01 KDA if not specified
-            parameters.recipient || account, // Default to current account if not specified
+            parameters.fromChain || 20,
+            parameters.toChain || 21,
+            parameters.amount || '0.01',
+            parameters.recipient || account,
             signer
           )
           break
         case 'getChainBalances':
           result = await getChainBalances(
-            parameters.address || account, 
-            parameters.chains || manifoldConfig.selectedChains, 
+            parameters.address || account,
+            parameters.chains || manifoldConfig.selectedChains,
             signer
           )
           break
@@ -675,10 +672,20 @@ function App() {
             signer
           )
           break
+        case 'addLiquidityMultiChain':
+        case 'executeArbitrage':
+        case 'crossChainYieldFarm':
+        case 'multiChainLending':
+          // Not implemented yet, show error
+          throw new Error('Function not yet implemented: ' + functionName)
         default:
           // For other functions, create a generic blockchain interaction
           const networkManager = new NetworkManager()
-          result = await networkManager.executeTransaction(functionName, parameters)
+          if (typeof networkManager.executeTransaction === 'function') {
+            result = await networkManager.executeTransaction(functionName, parameters)
+          } else {
+            throw new Error('Function not supported: ' + functionName)
+          }
           break
       }
       
@@ -889,10 +896,11 @@ function App() {
             <h2 className="text-2xl font-semibold text-slate-800">
               Configuration Overview
             </h2>
-            <div className="text-sm text-slate-500">
-              Generated for {useCaseName}
-            </div>
-          </div>
+                  <div className="text-sm text-slate-600">
+                    <p>Account: {account ? `${account.slice(0, 6)}...${account.slice(-4)}` : 'N/A'}</p>
+                    <p>Network: {chainId ? `Chain ${chainId}` : 'Unknown'}</p>
+                    <p>Balance: {balance} KDA</p>
+                  </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Chains Section */}
@@ -972,16 +980,15 @@ function App() {
         <div className="space-y-6">
           {filteredFunctions.length > 0 ? (
             filteredFunctions.map((functionData) => (
-              <FunctionCard
-                key={functionData.name}
-                functionData={functionData}
-                chainConfigs={chainConfig.chainConfigs || []}
-                onExecute={handleFunctionExecute}
-                isExecuting={executingFunctions[functionData.name] || false}
-                walletConnected={isConnected}
-                currentAccount={account}
-                currentNetwork={network}
-              />
+                <FunctionCard
+                  key={functionData.name}
+                  functionData={functionData}
+                  chainConfigs={chainConfig.chainConfigs || []}
+                  onExecute={handleFunctionExecute}
+                  isExecuting={executingFunctions[functionData.name] || false}
+                  walletConnected={isConnected}
+                  currentAccount={account}
+                />
             ))
           ) : functionGen.isGenerating ? (
             <div className="card-container text-center py-16 animate-fade-in">
