@@ -24,6 +24,141 @@ const colors = {
 console.log(`\n${colors.cyan}${colors.bold}🚀 Welcome to Manifold - Kadena Chainweb EVM Function Generator!${colors.reset}\n`)
 console.log(`${colors.blue}This setup wizard will configure your multi-chain development environment.${colors.reset}\n`)
 
+// Helper functions for string manipulation and template generation
+function escapeString(str) {
+  return str.replace(/\${/g, '\\${').replace(/`/g, '\\`')
+}
+
+function wrapInBackticks(str) {
+  return '`' + str + '`'
+}
+
+// Template functions for App.jsx generation
+function generateImports() {
+  return [
+    "import React, { useState, useEffect } from 'react'",
+    "import { toast } from 'react-hot-toast'",
+    "import { ethers } from 'ethers'",
+    "import { Code, Zap, BookOpen, Wallet, AlertCircle } from 'lucide-react'",
+    "import FunctionCard from './components/FunctionCard'",
+    "import { useFunctionGenerator } from './hooks/useFunctionGenerator'",
+    "import { useChainConfig } from './hooks/useChainConfig'",
+    "import { useWallet } from './hooks/useWallet'",
+    "import Header from './components/Header'",
+    "import LoadingScreen from './components/LoadingScreen'",
+    "import manifoldConfig from './manifold.config.js'",
+    "import { NetworkManager } from './utils/networkManager'",
+    "import { crossChainTransfer, getChainBalances, multiChainDeploy } from './utils/realFunctions'"
+  ].join('\\n')
+}
+
+function generateUseStates() {
+  return `
+  const [isLoading, setIsLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [executingFunctions, setExecutingFunctions] = useState({})
+  const [filteredFunctions, setFilteredFunctions] = useState([])
+  `
+}
+
+function generateUseEffects() {
+  return escapeString(`
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        if (manifoldConfig?.selectedChains?.length > 0) {
+          console.log('✅ Configuration loaded:', {
+            useCase: manifoldConfig.useCase,
+            chains: manifoldConfig.selectedChains,
+            functions: manifoldConfig.selectedFunctions
+          })
+          
+          setTimeout(() => {
+            setIsLoading(false)
+            toast.success('Functions loaded successfully!')
+          }, 1000)
+        } else {
+          console.error('❌ Invalid configuration detected')
+          toast.error('Configuration not found. Please check your setup.')
+          setIsLoading(false)
+        }
+      } catch (error) {
+        console.error('❌ Failed to load configuration:', error)
+        toast.error('Failed to load configuration')
+        setIsLoading(false)
+      }
+    }
+
+    initializeApp()
+  }, [])
+
+  useEffect(() => {
+    let functions = Object.values(functionGen.generatedFunctions || {})
+    
+    if (searchTerm) {
+      functions = functions.filter(func => 
+        func.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        func.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        func.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+
+    setFilteredFunctions(functions)
+  }, [functionGen.generatedFunctions, searchTerm])`)
+}
+
+function generateHandleFunctionExecute() {
+  return escapeString(`
+  const handleFunctionExecute = async (functionName, parameters) => {
+    if (!isConnected) {
+      toast.error('Please connect your wallet first')
+      return
+    }
+
+    setExecutingFunctions(prev => ({ ...prev, [functionName]: true }))
+    
+    try {
+      let result
+      const provider = new ethers.BrowserProvider(window.ethereum)
+      const signer = await provider.getSigner()
+      
+      const functionMap = {
+        crossChainTransfer: async () => {
+          const { fromChain = 20, toChain = 21, amount = '0.01', recipient } = parameters
+          return crossChainTransfer(fromChain, toChain, amount, recipient || account, signer)
+        },
+        getChainBalances: async () => {
+          const { chains = manifoldConfig.selectedChains } = parameters
+          return getChainBalances(account, chains, signer)
+        },
+        multiChainDeploy: async () => {
+          const { chains = manifoldConfig.selectedChains, bytecode, args = [] } = parameters
+          return multiChainDeploy(chains, bytecode, args, signer)
+        }
+      }
+
+      if (functionMap[functionName]) {
+        result = await functionMap[functionName]()
+      } else {
+        const networkManager = new NetworkManager()
+        result = await networkManager.executeTransaction(functionName, parameters)
+      }
+      
+      if (result?.success) {
+        toast.success(\`\${functionName} executed successfully!\`)
+        return result
+      } else {
+        throw new Error(result?.error || 'Transaction failed')
+      }
+    } catch (error) {
+      console.error('Function execution failed:', error)
+      toast.error('Execution failed: ' + error.message)
+      throw error
+    } finally {
+      setExecutingFunctions(prev => ({ ...prev, [functionName]: false }))
+    }
+  }`)
+
 const config = {
   useCase: '',
   chainCount: 0,
@@ -405,10 +540,10 @@ async function createGeneratedPackageJson(targetPath) {
       "preview": "vite preview"
     },
     "dependencies": {
-      "react": "^18.3.1",
-      "react-dom": "^18.3.1",
-      "ethers": "^6.13.2",
-      "lucide-react": "^0.441.0",
+      "react": "^18.2.0",
+      "react-dom": "^18.2.0",
+      "ethers": "^6.7.1",
+      "lucide-react": "^0.263.1",
       "react-hot-toast": "^2.4.1"
     },
     "devDependencies": {
@@ -477,10 +612,38 @@ async function generateViteConfig(targetPath) {
   const content = `import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   optimizeDeps: {
-    include: ['react', 'react-dom']
+    include: ['react', 'react-dom', 'ethers', 'react-hot-toast', 'lucide-react'],
+    exclude: []
+  },
+  define: {
+    'process.env': {
+      NODE_ENV: JSON.stringify(process.env.NODE_ENV),
+      BRIDGE_CONTRACT_20: JSON.stringify('0x...'), // Default contract addresses
+      TOKEN_CONTRACT_20: JSON.stringify('0x...'),
+      DEFI_CONTRACT_20: JSON.stringify('0x...'),
+      ROUTER_CONTRACT_20: JSON.stringify('0x...')
+    }
+  },
+  server: {
+    port: 5173,
+    host: true,
+    open: true
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'ethers-vendor': ['ethers']
+        }
+      }
+    }
   }
 })`
   
@@ -581,14 +744,86 @@ import { Toaster } from 'react-hot-toast'
 import App from './App.jsx'
 import './index.css'
 
-createRoot(document.getElementById('root')).render(
+// Error boundary component for catching runtime errors
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('React Error Boundary caught an error:', error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+          <div className="text-center max-w-lg">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-slate-800 mb-2">Something went wrong</h2>
+            <p className="text-slate-600 mb-4">{this.state.error?.message || 'An unexpected error occurred'}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Reload Page
+            </button>
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
+const root = createRoot(document.getElementById('root'))
+
+root.render(
   <React.StrictMode>
-    <App />
-    <Toaster position="top-right" />
+    <ErrorBoundary>
+      <App />
+      <Toaster 
+        position="top-right" 
+        toastOptions={{
+          duration: 5000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: '#4ade80',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            duration: 5000,
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
+    </ErrorBoundary>
   </React.StrictMode>
 )`
   
   fs.writeFileSync(path.join(targetPath, 'src/main.jsx'), content)
+}
+
+function escapeDollarSign(str) {
+  return str.replace(/\$/g, '\\$')
 }
 
 async function generateCleanApp(targetPath) {
@@ -599,6 +834,909 @@ async function generateCleanApp(targetPath) {
     bridge: 'Cross-chain Bridge',
     custom: 'Custom Application'
   }
+
+  // Helper function to escape template literals
+  function escapeTemplateString(str) {
+    return str.replace(/\${/g, '\\${')
+  }
+  
+  // This function contains the actual template for the App.jsx file
+  const generateAppJsxTemplate = (useCaseName) => {
+    const successMessage = "${functionName} executed successfully!"
+    const imports = [
+      "import React, { useState, useEffect } from 'react'",
+      "import { toast } from 'react-hot-toast'",
+      "import { ethers } from 'ethers'",
+      "import { Code, Zap, BookOpen, Wallet, AlertCircle } from 'lucide-react'",
+      "import FunctionCard from './components/FunctionCard'",
+      "import { useFunctionGenerator } from './hooks/useFunctionGenerator'",
+      "import { useChainConfig } from './hooks/useChainConfig'",
+      "import { useWallet } from './hooks/useWallet'",
+      "import Header from './components/Header'",
+      "import LoadingScreen from './components/LoadingScreen'",
+      "import manifoldConfig from './manifold.config.js'",
+      "import { NetworkManager } from './utils/networkManager'",
+      "import { crossChainTransfer, getChainBalances, multiChainDeploy } from './utils/realFunctions'"
+    ].join('\n')
+    // Create the template string with proper escaping for template literals
+    const template = []
+    
+    // Add imports
+    template.push(`
+import React, { useState, useEffect } from 'react'
+import { toast } from 'react-hot-toast'
+import { ethers } from 'ethers'
+import { Code, Zap, BookOpen, Wallet, AlertCircle } from 'lucide-react'
+import FunctionCard from './components/FunctionCard'
+import { useFunctionGenerator } from './hooks/useFunctionGenerator'
+import { useChainConfig } from './hooks/useChainConfig'
+import { useWallet } from './hooks/useWallet'
+import Header from './components/Header'
+import LoadingScreen from './components/LoadingScreen'
+import manifoldConfig from './manifold.config.js'
+import { NetworkManager } from './utils/networkManager'
+import { crossChainTransfer, getChainBalances, multiChainDeploy } from './utils/realFunctions'
+
+function App() {
+  const [isLoading, setIsLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [executingFunctions, setExecutingFunctions] = useState({})
+  const [filteredFunctions, setFilteredFunctions] = useState([])
+  
+  const chainConfig = useChainConfig(manifoldConfig.selectedChains)
+  const functionGen = useFunctionGenerator(
+    manifoldConfig.selectedChains, 
+    manifoldConfig.selectedFunctions,
+    manifoldConfig.useCase
+  )
+  
+  const { 
+    account, 
+    isConnected, 
+    chainId,
+    connectWallet, 
+    disconnectWallet, 
+    switchToChain,
+    balance,
+    isConnecting,
+    network
+  } = useWallet()
+
+  const handleFunctionExecute = async (functionName, parameters) => {
+    if (!isConnected) {
+      toast.error('Please connect your wallet first')
+      return
+    }
+
+    setExecutingFunctions(prev => ({ ...prev, [functionName]: true }))
+    
+    try {
+      let result
+      const provider = new ethers.BrowserProvider(window.ethereum)
+      const signer = await provider.getSigner()
+      
+      const functionMap = {
+        crossChainTransfer: async () => {
+          const { fromChain = 20, toChain = 21, amount = '0.01', recipient } = parameters
+          return crossChainTransfer(fromChain, toChain, amount, recipient || account, signer)
+        },
+        getChainBalances: async () => {
+          const { chains = manifoldConfig.selectedChains } = parameters
+          return getChainBalances(account, chains, signer)
+        },
+        multiChainDeploy: async () => {
+          const { chains = manifoldConfig.selectedChains, bytecode, args = [] } = parameters
+          return multiChainDeploy(chains, bytecode, args, signer)
+        }
+      }
+
+      if (functionMap[functionName]) {
+        result = await functionMap[functionName]()
+      } else {
+        const networkManager = new NetworkManager()
+        result = await networkManager.executeTransaction(functionName, parameters)
+      }
+      
+      if (result?.success) {
+        toast.success(\\\`\\\${functionName} executed successfully!\\\`)
+        return result
+      } else {
+        throw new Error(result?.error || 'Transaction failed')
+      }
+    } catch (error) {
+      console.error('Function execution failed:', error)
+      toast.error('Execution failed: ' + error.message)
+      throw error
+    } finally {
+      setExecutingFunctions(prev => ({ ...prev, [functionName]: false }))
+    }
+  }
+
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        if (manifoldConfig?.selectedChains?.length > 0) {
+          console.log('✅ Configuration loaded:', {
+            useCase: manifoldConfig.useCase,
+            chains: manifoldConfig.selectedChains,
+            functions: manifoldConfig.selectedFunctions
+          })
+          
+          setTimeout(() => {
+            setIsLoading(false)
+            toast.success('Functions loaded successfully!')
+          }, 1000)
+        } else {
+          console.error('❌ Invalid configuration detected')
+          toast.error('Configuration not found. Please check your setup.')
+          setIsLoading(false)
+        }
+      } catch (error) {
+        console.error('❌ Failed to load configuration:', error)
+        toast.error('Failed to load configuration')
+        setIsLoading(false)
+      }
+    }
+
+    initializeApp()
+  }, [])
+
+  useEffect(() => {
+    let functions = Object.values(functionGen.generatedFunctions || {})
+    
+    if (searchTerm) {
+      functions = functions.filter(func => 
+        func.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        func.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        func.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+
+    setFilteredFunctions(functions)
+  }, [functionGen.generatedFunctions, searchTerm])
+
+  if (isLoading) {
+    return <LoadingScreen />
+  }
+
+  if (!manifoldConfig?.selectedChains?.length) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="card-container max-w-lg mx-auto p-8 text-center">
+          <div className="w-16 h-16 mx-auto mb-6 bg-yellow-100 rounded-full flex items-center justify-center">
+            <AlertCircle className="w-8 h-8 text-yellow-600" />
+          </div>
+          <h1 className="text-3xl font-bold text-slate-800 mb-4">Configuration Missing</h1>
+          <p className="text-slate-600 mb-8">
+            No configuration found. Please run the setup command to configure your chains and functions.
+          </p>
+          <div className="bg-slate-100 p-6 rounded-lg border border-slate-200 mb-6">
+            <code className="text-lg">npm run setup</code>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const stats = functionGen.getFunctionStats?.() || { total: 0, chains: manifoldConfig.selectedChains.length }
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <Header
+        isConnected={isConnected}
+        account={account}
+        balance={balance}
+        connectWallet={connectWallet}
+        disconnectWallet={disconnectWallet}
+      />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-4xl font-bold text-slate-800">Manifold Functions</h1>
+          <div className="text-sm text-slate-500">${useCaseName}</div>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-3 mb-8">
+          <div className="card-container p-6">
+            <div className="text-2xl font-bold text-slate-800 mb-1">{stats.total}</div>
+            <div className="text-sm text-slate-500">Total Functions</div>
+          </div>
+          <div className="card-container p-6">
+            <div className="text-2xl font-bold text-slate-800 mb-1">
+              {manifoldConfig.selectedChains.length}
+            </div>
+            <div className="text-sm text-slate-500">Active Chains</div>
+          </div>
+          <div className="card-container p-6">
+            <div className="text-2xl font-bold text-green-600 mb-1">
+              {isConnected ? 'Connected' : 'Not Connected'}
+            </div>
+            <div className="text-sm text-slate-500">Wallet Status</div>
+          </div>
+        </div>
+
+        <div className="card-container p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-slate-800">Wallet Connection</h2>
+          </div>
+
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              {isConnected ? (
+                <div className="text-sm text-slate-600">
+                  <p>Account: {account?.slice(0, 6)}...{account?.slice(-4)}</p>
+                  <p>Network: {network ? ('Chain ' + chainId) : 'Unknown'}</p>
+                  <p>Balance: {balance} KDA</p>
+                </div>
+              ) : (
+                <div className="text-sm text-slate-500">
+                  Connect your wallet to start interacting with functions
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-4">
+              {!isConnected ? (
+                <button
+                  onClick={connectWallet}
+                  disabled={isConnecting}
+                  className="btn-primary flex items-center gap-2"
+                >
+                  <Wallet className="w-4 h-4" />
+                  <span>{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
+                </button>
+              ) : (
+                <>
+                  <select
+                    value={chainId || ''}
+                    onChange={(e) => {
+                      const selectedChainId = parseInt(e.target.value)
+                      const chainNumber = selectedChainId - 5900
+                      switchToChain(chainNumber)
+                    }}
+                    className="input-primary text-sm"
+                  >
+                    <option value="">Select Chain</option>
+                    {manifoldConfig.selectedChains.map(chain => (
+                      <option key={chain} value={5900 + chain}>
+                        Chain {chain}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={disconnectWallet}
+                    className="btn-secondary text-sm"
+                  >
+                    Disconnect
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="card-container p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <input
+              type="text"
+              placeholder="Search functions..."
+              className="input-primary w-full max-w-md"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <div className="text-sm text-slate-500">
+              {filteredFunctions.length} functions found
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {filteredFunctions.map((func) => (
+              <FunctionCard
+                key={func.name}
+                functionData={func}
+                chainConfigs={chainConfig.chainConfigs}
+                onExecute={handleFunctionExecute}
+                isExecuting={executingFunctions[func.name]}
+                walletConnected={isConnected}
+                currentAccount={account}
+                currentNetwork={network}
+              />
+            ))}
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}
+
+export default App
+    `.trim())
+    
+    return template.join('')
+  }
+    // Define the imports section
+    const imports = [
+      "import React, { useState, useEffect } from 'react'",
+      "import { toast } from 'react-hot-toast'",
+      "import { ethers } from 'ethers'",
+      "import { Code, Zap, BookOpen, Wallet, AlertCircle } from 'lucide-react'",
+      "import FunctionCard from './components/FunctionCard'",
+      "import { useFunctionGenerator } from './hooks/useFunctionGenerator'",
+      "import { useChainConfig } from './hooks/useChainConfig'",
+      "import { useWallet } from './hooks/useWallet'",
+      "import Header from './components/Header'",
+      "import LoadingScreen from './components/LoadingScreen'",
+      "import manifoldConfig from './manifold.config.js'",
+      "import { NetworkManager } from './utils/networkManager'",
+      "import { crossChainTransfer, getChainBalances, multiChainDeploy } from './utils/realFunctions'"
+    ].join('\n')
+
+    // Define the main component structure
+    return `${imports}
+
+function App() {
+  const [isLoading, setIsLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [executingFunctions, setExecutingFunctions] = useState({})
+  const [filteredFunctions, setFilteredFunctions] = useState([])
+  
+  const chainConfig = useChainConfig(manifoldConfig.selectedChains)
+  const functionGen = useFunctionGenerator(
+    manifoldConfig.selectedChains, 
+    manifoldConfig.selectedFunctions,
+    manifoldConfig.useCase
+  )
+  
+  const { 
+    account, 
+    isConnected, 
+    chainId,
+    connectWallet, 
+    disconnectWallet, 
+    switchToChain,
+    balance,
+    isConnecting,
+    network
+  } = useWallet()
+
+  // Handle function execution with proper error handling
+  const handleFunctionExecute = async (functionName, parameters) => {
+    if (!isConnected) {
+      toast.error('Please connect your wallet first')
+      return
+    }
+
+    setExecutingFunctions(prev => ({ ...prev, [functionName]: true }))
+    
+    try {
+      let result
+      const provider = new ethers.BrowserProvider(window.ethereum)
+      const signer = await provider.getSigner()
+      
+      // Route to appropriate function based on name
+      const functionMap = {
+        crossChainTransfer: async () => {
+          const { fromChain = 20, toChain = 21, amount = '0.01', recipient } = parameters
+          return crossChainTransfer(fromChain, toChain, amount, recipient || account, signer)
+        },
+        getChainBalances: async () => {
+          const { chains = manifoldConfig.selectedChains } = parameters
+          return getChainBalances(account, chains, signer)
+        },
+        multiChainDeploy: async () => {
+          const { chains = manifoldConfig.selectedChains, bytecode, args = [] } = parameters
+          return multiChainDeploy(chains, bytecode, args, signer)
+        }
+      }
+
+      if (functionMap[functionName]) {
+        result = await functionMap[functionName]()
+      } else {
+        const networkManager = new NetworkManager()
+        result = await networkManager.executeTransaction(functionName, parameters)
+      }
+      
+      if (result?.success) {
+        toast.success(\`\${functionName} executed successfully!\`)
+        return result
+      } else {
+        throw new Error(result?.error || 'Transaction failed')
+      }
+    } catch (error) {
+      console.error('Function execution failed:', error)
+      toast.error('Execution failed: ' + error.message)
+      throw error
+    } finally {
+      setExecutingFunctions(prev => ({ ...prev, [functionName]: false }))
+    }
+  }
+
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        if (manifoldConfig?.selectedChains?.length > 0) {
+          console.log('✅ Configuration loaded:', {
+            useCase: manifoldConfig.useCase,
+            chains: manifoldConfig.selectedChains,
+            functions: manifoldConfig.selectedFunctions
+          })
+          
+          setTimeout(() => {
+            setIsLoading(false)
+            toast.success('Functions loaded successfully!')
+          }, 1000)
+        } else {
+          console.error('❌ Invalid configuration detected')
+          toast.error('Configuration not found. Please check your setup.')
+          setIsLoading(false)
+        }
+      } catch (error) {
+        console.error('❌ Failed to load configuration:', error)
+        toast.error('Failed to load configuration')
+        setIsLoading(false)
+      }
+    }
+
+    initializeApp()
+  }, [])
+
+  useEffect(() => {
+    let functions = Object.values(functionGen.generatedFunctions || {})
+    
+    if (searchTerm) {
+      functions = functions.filter(func => 
+        func.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        func.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        func.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+
+    setFilteredFunctions(functions)
+  }, [functionGen.generatedFunctions, searchTerm])
+
+  if (isLoading) {
+    return <LoadingScreen />
+  }
+
+  if (!manifoldConfig?.selectedChains?.length) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="card-container max-w-lg mx-auto p-8 text-center">
+          <div className="w-16 h-16 mx-auto mb-6 bg-yellow-100 rounded-full flex items-center justify-center">
+            <AlertCircle className="w-8 h-8 text-yellow-600" />
+          </div>
+          <h1 className="text-3xl font-bold text-slate-800 mb-4">Configuration Missing</h1>
+          <p className="text-slate-600 mb-8">
+            No configuration found. Please run the setup command to configure your chains and functions.
+          </p>
+          <div className="bg-slate-100 p-6 rounded-lg border border-slate-200 mb-6">
+            <code className="text-lg">npm run setup</code>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const stats = functionGen.getFunctionStats?.() || { total: 0, chains: manifoldConfig.selectedChains.length }
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <Header
+        isConnected={isConnected}
+        account={account}
+        balance={balance}
+        connectWallet={connectWallet}
+        disconnectWallet={disconnectWallet}
+      />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-4xl font-bold text-slate-800">Manifold Functions</h1>
+          <div className="text-sm text-slate-500">${useCaseName}</div>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-3 mb-8">
+          <div className="card-container p-6">
+            <div className="text-2xl font-bold text-slate-800 mb-1">{stats.total}</div>
+            <div className="text-sm text-slate-500">Total Functions</div>
+          </div>
+          <div className="card-container p-6">
+            <div className="text-2xl font-bold text-slate-800 mb-1">
+              {manifoldConfig.selectedChains.length}
+            </div>
+            <div className="text-sm text-slate-500">Active Chains</div>
+          </div>
+          <div className="card-container p-6">
+            <div className="text-2xl font-bold text-green-600 mb-1">
+              {isConnected ? 'Connected' : 'Not Connected'}
+            </div>
+            <div className="text-sm text-slate-500">Wallet Status</div>
+          </div>
+        </div>
+
+        <div className="card-container p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-slate-800">Wallet Connection</h2>
+          </div>
+
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              {isConnected ? (
+                <div className="text-sm text-slate-600">
+                  <p>Account: {account?.slice(0, 6)}...{account?.slice(-4)}</p>
+                  <p>Network: {network ? ('Chain ' + chainId) : 'Unknown'}</p>
+                  <p>Balance: {balance} KDA</p>
+                </div>
+              ) : (
+                <div className="text-sm text-slate-500">
+                  Connect your wallet to start interacting with functions
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-4">
+              {!isConnected ? (
+                <button
+                  onClick={connectWallet}
+                  disabled={isConnecting}
+                  className="btn-primary flex items-center gap-2"
+                >
+                  <Wallet className="w-4 h-4" />
+                  <span>{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
+                </button>
+              ) : (
+                <>
+                  <select
+                    value={chainId || ''}
+                    onChange={(e) => {
+                      const selectedChainId = parseInt(e.target.value)
+                      const chainNumber = selectedChainId - 5900
+                      switchToChain(chainNumber)
+                    }}
+                    className="input-primary text-sm"
+                  >
+                    <option value="">Select Chain</option>
+                    {manifoldConfig.selectedChains.map(chain => (
+                      <option key={chain} value={5900 + chain}>
+                        Chain {chain}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={disconnectWallet}
+                    className="btn-secondary text-sm"
+                  >
+                    Disconnect
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="card-container p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <input
+              type="text"
+              placeholder="Search functions..."
+              className="input-primary w-full max-w-md"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <div className="text-sm text-slate-500">
+              {filteredFunctions.length} functions found
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {filteredFunctions.map((func) => (
+              <FunctionCard
+                key={func.name}
+                functionData={func}
+                chainConfigs={chainConfig.chainConfigs}
+                onExecute={handleFunctionExecute}
+                isExecuting={executingFunctions[func.name]}
+                walletConnected={isConnected}
+                currentAccount={account}
+                currentNetwork={network}
+              />
+            ))}
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}
+
+export default App`
+    }
+  }
+import { toast } from 'react-hot-toast'
+import { ethers } from 'ethers'
+import { Code, Zap, BookOpen, Wallet, AlertCircle } from 'lucide-react'
+import FunctionCard from './components/FunctionCard'
+import { useFunctionGenerator } from './hooks/useFunctionGenerator'
+import { useChainConfig } from './hooks/useChainConfig'
+import { useWallet } from './hooks/useWallet'
+import Header from './components/Header'
+import LoadingScreen from './components/LoadingScreen'
+import manifoldConfig from './manifold.config.js'
+
+function App() {
+  const [isLoading, setIsLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [executingFunctions, setExecutingFunctions] = useState({})
+  const [filteredFunctions, setFilteredFunctions] = useState([])
+  
+  const chainConfig = useChainConfig(manifoldConfig.selectedChains)
+  const functionGen = useFunctionGenerator(
+    manifoldConfig.selectedChains, 
+    manifoldConfig.selectedFunctions,
+    manifoldConfig.useCase
+  )
+
+  const handleFunctionExecute = async (functionName, parameters) => {
+    if (!isConnected) {
+      toast.error('Please connect your wallet first')
+      return
+    }
+
+    setExecutingFunctions(prev => ({ ...prev, [functionName]: true }))
+    
+    try {
+      let result
+      const provider = new ethers.BrowserProvider(window.ethereum)
+      const signer = await provider.getSigner()
+      
+      // Route to appropriate function based on name
+      const functionMap = {
+        crossChainTransfer: async () => {
+          const { fromChain = 20, toChain = 21, amount = '0.01', recipient } = parameters
+          return crossChainTransfer(fromChain, toChain, amount, recipient || account, signer)
+        },
+        getChainBalances: async () => {
+          const { chains = manifoldConfig.selectedChains } = parameters
+          return getChainBalances(account, chains, signer)
+        },
+        multiChainDeploy: async () => {
+          const { chains = manifoldConfig.selectedChains, bytecode, args = [] } = parameters
+          return multiChainDeploy(chains, bytecode, args, signer)
+        }
+      }
+
+      if (functionMap[functionName]) {
+        result = await functionMap[functionName]()
+      } else {
+        // For other functions, use the NetworkManager
+        const networkManager = new NetworkManager()
+        result = await networkManager.executeTransaction(functionName, parameters)
+      }
+      
+      if (result?.success) {
+        toast.success(\`\${functionName} executed successfully!\`)
+        return result
+      } else {
+        throw new Error(result?.error || 'Transaction failed')
+      }
+    } catch (error) {
+      console.error('Function execution failed:', error)
+      toast.error(\`Execution failed: \${error.message}\`)
+      throw error
+    } finally {
+      setExecutingFunctions(prev => ({ ...prev, [functionName]: false }))
+    }
+  }
+  
+  const { 
+    account, 
+    isConnected, 
+    chainId,
+    connectWallet, 
+    disconnectWallet, 
+    switchToChain,
+    balance,
+    isConnecting,
+    network
+  } = useWallet()
+
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        if (manifoldConfig?.selectedChains?.length > 0) {
+          console.log('✅ Configuration loaded:', {
+            useCase: manifoldConfig.useCase,
+            chains: manifoldConfig.selectedChains,
+            functions: manifoldConfig.selectedFunctions
+          })
+          
+          setTimeout(() => {
+            setIsLoading(false)
+            toast.success('Functions loaded successfully!')
+          }, 1000)
+        } else {
+          console.error('❌ Invalid configuration detected')
+          toast.error('Configuration not found. Please check your setup.')
+          setIsLoading(false)
+        }
+      } catch (error) {
+        console.error('❌ Failed to load configuration:', error)
+        toast.error('Failed to load configuration')
+        setIsLoading(false)
+      }
+    }
+
+    initializeApp()
+  }, [])
+
+  useEffect(() => {
+    let functions = Object.values(functionGen.generatedFunctions || {})
+
+    if (searchTerm) {
+      functions = functions.filter(func => 
+        func.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        func.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        func.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+
+    setFilteredFunctions(functions)
+  }, [functionGen.generatedFunctions, searchTerm])
+
+  if (isLoading) {
+    return <LoadingScreen />
+  }
+
+  if (!manifoldConfig?.selectedChains?.length) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="card-container max-w-lg mx-auto p-8 text-center">
+          <div className="w-16 h-16 mx-auto mb-6 bg-yellow-100 rounded-full flex items-center justify-center">
+            <AlertCircle className="w-8 h-8 text-yellow-600" />
+          </div>
+          <h1 className="text-3xl font-bold text-slate-800 mb-4">Configuration Missing</h1>
+          <p className="text-slate-600 mb-8">
+            No configuration found. Please run the setup command to configure your chains and functions.
+          </p>
+          <div className="bg-slate-100 p-6 rounded-lg border border-slate-200 mb-6">
+            <code className="text-lg">npm run setup</code>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const stats = functionGen.getFunctionStats?.() || { total: 0, chains: manifoldConfig.selectedChains.length }
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <Header
+        isConnected={isConnected}
+        account={account}
+        balance={balance}
+        connectWallet={connectWallet}
+        disconnectWallet={disconnectWallet}
+      />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-4xl font-bold text-slate-800">Manifold Functions</h1>
+          <div className="text-sm text-slate-500">${useCaseName}</div>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-3 mb-8">
+          <div className="card-container p-6">
+            <div className="text-2xl font-bold text-slate-800 mb-1">{stats.total}</div>
+            <div className="text-sm text-slate-500">Total Functions</div>
+          </div>
+          <div className="card-container p-6">
+            <div className="text-2xl font-bold text-slate-800 mb-1">
+              {manifoldConfig.selectedChains.length}
+            </div>
+            <div className="text-sm text-slate-500">Active Chains</div>
+          </div>
+          <div className="card-container p-6">
+            <div className="text-2xl font-bold text-green-600 mb-1">
+              {isConnected ? 'Connected' : 'Not Connected'}
+            </div>
+            <div className="text-sm text-slate-500">Wallet Status</div>
+          </div>
+        </div>
+
+        <div className="card-container p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-slate-800">Wallet Connection</h2>
+          </div>
+
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              {isConnected ? (
+                <div className="text-sm text-slate-600">
+                  <p>Account: {account?.slice(0, 6)}...{account?.slice(-4)}</p>
+                  <p>Network: {network ? \`Chain \${chainId}\` : 'Unknown'}</p>
+                  <p>Balance: {balance} KDA</p>
+                </div>
+              ) : (
+                <div className="text-sm text-slate-500">
+                  Connect your wallet to start interacting with functions
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-4">
+              {!isConnected ? (
+                <button
+                  onClick={connectWallet}
+                  disabled={isConnecting}
+                  className="btn-primary flex items-center gap-2"
+                >
+                  <Wallet className="w-4 h-4" />
+                  <span>{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
+                </button>
+              ) : (
+                <>
+                  <select
+                    value={chainId || ''}
+                    onChange={(e) => {
+                      const selectedChainId = parseInt(e.target.value)
+                      const chainNumber = selectedChainId - 5900
+                      switchToChain(chainNumber)
+                    }}
+                    className="input-primary text-sm"
+                  >
+                    <option value="">Select Chain</option>
+                    {manifoldConfig.selectedChains.map(chain => (
+                      <option key={chain} value={5900 + chain}>
+                        Chain {chain}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={disconnectWallet}
+                    className="btn-secondary text-sm"
+                  >
+                    Disconnect
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="card-container p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <input
+              type="text"
+              placeholder="Search functions..."
+              className="input-primary w-full max-w-md"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <div className="text-sm text-slate-500">
+              {filteredFunctions.length} functions found
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {filteredFunctions.map((func) => (
+              <FunctionCard
+                key={func.name}
+                functionData={func}
+                chainConfigs={chainConfig.chainConfigs}
+                onExecute={handleFunctionExecute}
+                isExecuting={executingFunctions[func.name]}
+                walletConnected={isConnected}
+                currentAccount={account}
+                currentNetwork={network}
+              />
+            ))}
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}
+
+export default App`
   
   const content = `import React, { useState, useEffect } from 'react'
 import { toast } from 'react-hot-toast'
@@ -608,8 +1746,8 @@ import FunctionCard from './components/FunctionCard'
 import { useFunctionGenerator } from './hooks/useFunctionGenerator'
 import { useChainConfig } from './hooks/useChainConfig'
 import { useWallet } from './hooks/useWallet'
-import { NetworkManager } from './utils/networkManager'
-import { crossChainTransfer, getChainBalances, multiChainDeploy } from './utils/realFunctions'
+import Header from './components/Header'
+import LoadingScreen from './components/LoadingScreen'
 import manifoldConfig from './manifold.config.js'
 
 function App() {
@@ -633,7 +1771,8 @@ function App() {
     disconnectWallet, 
     switchToChain,
     balance,
-    isConnecting 
+    isConnecting,
+    network
   } = useWallet()
 
   useEffect(() => {
@@ -751,18 +1890,7 @@ function App() {
   const useCaseName = "${useCaseNames[config.useCase] || 'Custom Application'}"
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-green-200 border-t-green-500 rounded-full animate-spin mx-auto mb-6"></div>
-          <h2 className="text-2xl font-semibold text-slate-700 mb-2">Loading Your Functions...</h2>
-          <p className="text-slate-500">Initializing Kadena Chainweb EVM interface</p>
-          <div className="mt-6 w-48 h-1 bg-slate-200 rounded-full mx-auto overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-green-500 to-blue-500 rounded-full animate-pulse"></div>
-          </div>
-        </div>
-      </div>
-    )
+    return <LoadingScreen />
   }
 
   // Show error state if no config
@@ -771,13 +1899,11 @@ function App() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="card-container max-w-lg mx-auto p-8 text-center">
           <div className="w-16 h-16 mx-auto mb-6 bg-yellow-100 rounded-full flex items-center justify-center">
-            <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
+            <AlertCircle className="w-8 h-8 text-yellow-600" />
           </div>
           <h1 className="text-3xl font-bold text-slate-800 mb-4">Configuration Missing</h1>
           <p className="text-slate-600 mb-8 leading-relaxed">
-            No configuration found. Please run the setup command to configure your chains and functions for the Kadena Chainweb EVM.
+            No configuration found. Please run the setup command to configure your chains and functions.
           </p>
           <div className="bg-slate-100 p-6 rounded-lg border border-slate-200 mb-6">
             <div className="flex items-center justify-between mb-3">
@@ -814,12 +1940,18 @@ function App() {
   }
 
   return (
-    <main className="bg-slate-50 min-h-screen w-full">
-      {/* Professional Header Section */}
-      <header className="bg-white shadow-xl border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="text-center lg:text-left">
+    <div className="min-h-screen bg-slate-50">
+      <Header
+        isConnected={isConnected}
+        account={account}
+        balance={balance}
+        connectWallet={connectWallet}
+        disconnectWallet={disconnectWallet}
+      />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="space-y-8">
+            <div>
               <h1 className="text-4xl lg:text-5xl font-extrabold text-gradient tracking-tight mb-2">
                 Manifold Functions
               </h1>
@@ -856,18 +1988,16 @@ function App() {
               </div>
             </div>
           </div>
-        </div>
-      </header>
 
-      {/* Wallet Connection Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="card-container p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center space-x-3">
-              <div className={\`w-3 h-3 rounded-full \${isConnected ? 'bg-green-500' : 'bg-red-500'}\`}></div>
-              <div>
-                <h3 className="font-semibold text-slate-800">
-                  Wallet Status: {isConnected ? 'Connected' : 'Disconnected'}
+          {/* Wallet Connection Section */}
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="card-container p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center space-x-3">
+                  <div className={\`w-3 h-3 rounded-full \${isConnected ? 'bg-green-500' : 'bg-red-500'}\`}></div>
+                  <div>
+                    <h3 className="font-semibold text-slate-800">
+                      Wallet Status: {isConnected ? 'Connected' : 'Disconnected'}
                 </h3>
                 {isConnected && (
                   <div className="text-sm text-slate-600">
@@ -1122,8 +2252,23 @@ function App() {
         </div>
       </section>
 
+        {/* Function Cards */}
+        <div className="space-y-8 mt-8">
+          {filteredFunctions.map((functionName) => (
+            <FunctionCard
+              key={functionName}
+              name={functionName}
+              description={functionGen.getFunctionDescription?.(functionName) || ''}
+              parameters={functionGen.getFunctionParameters?.(functionName) || []}
+              isExecuting={executingFunctions[functionName]}
+              onExecute={(params) => executeFunction(functionName, params)}
+              chains={manifoldConfig.selectedChains}
+            />
+          ))}
+        </div>
+
       {/* Professional Footer */}
-      <footer className="bg-slate-800 text-slate-300">
+      <footer className="bg-slate-800 text-slate-300 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
@@ -1171,16 +2316,98 @@ function App() {
 
 export default App`
   
-  fs.writeFileSync(path.join(targetPath, 'src/App.jsx'), content)
+  const appJsxContent = generateAppJsxTemplate(useCaseNames[config.useCase] || 'Custom Application')
+  fs.writeFileSync(path.join(targetPath, 'src/App.jsx'), appJsxContent)
+  console.log(`${colors.green}✅ Generated clean App.jsx${colors.reset}`)
+}
+
+function generateComponentContent(componentName) {
+  switch (componentName) {
+    case 'Header':
+      return `import React from 'react'
+import { Wallet } from 'lucide-react'
+
+export default function Header({ 
+  isConnected, 
+  account, 
+  balance, 
+  connectWallet, 
+  disconnectWallet 
+}) {
+  return (
+    <header className="bg-white shadow-xl border-b border-slate-200 p-4">
+      <div className="container mx-auto flex justify-between items-center">
+        <div className="flex items-center space-x-4">
+          <h1 className="text-2xl font-bold text-slate-800">Manifold</h1>
+          <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+            EVM Multi-Chain
+          </span>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          {isConnected ? (
+            <button
+              onClick={disconnectWallet}
+              className="flex items-center px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+            >
+              <Wallet className="w-4 h-4 mr-2" />
+              <span className="font-medium">
+                {account.slice(0, 6)}...{account.slice(-4)} ({balance})
+              </span>
+            </button>
+          ) : (
+            <button
+              onClick={connectWallet}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
+            >
+              <Wallet className="w-4 h-4 mr-2" />
+              <span className="font-medium">Connect Wallet</span>
+            </button>
+          )}
+        </div>
+      </div>
+    </header>
+  )
+}`
+    case 'LoadingScreen':
+      return `import React from 'react'
+
+export default function LoadingScreen() {
+  return (
+    <div className="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-600 mx-auto"></div>
+        <h2 className="mt-4 text-xl font-semibold text-slate-800">Loading...</h2>
+        <p className="mt-2 text-slate-600">Preparing your multi-chain environment</p>
+      </div>
+    </div>
+  )
+}`
+    default:
+      return ''
+  }
 }
 
 async function generateComponents(targetPath) {
-  // Copy FunctionCard component
-  const sourceFunctionCard = path.join(__dirname, '..', 'src', 'components', 'FunctionCard.jsx')
-  const targetFunctionCard = path.join(targetPath, 'src', 'components', 'FunctionCard.jsx')
-  if (fs.existsSync(sourceFunctionCard)) {
-    fs.copyFileSync(sourceFunctionCard, targetFunctionCard)
-    console.log(`${colors.green}✅ Copied FunctionCard component${colors.reset}`)
+  const components = [
+    { name: 'FunctionCard', required: true },
+    { name: 'Header', required: true },
+    { name: 'LoadingScreen', required: true }
+  ]
+
+  for (const component of components) {
+    const sourceFile = path.join(__dirname, '..', 'src', 'components', `${component.name}.jsx`)
+    const targetFile = path.join(targetPath, 'src', 'components', `${component.name}.jsx`)
+    
+    if (fs.existsSync(sourceFile)) {
+      fs.copyFileSync(sourceFile, targetFile)
+      console.log(`${colors.green}✅ Copied ${component.name} component${colors.reset}`)
+    } else if (component.required) {
+      // If component is required but source doesn't exist, create it
+      const componentContent = generateComponentContent(component.name)
+      fs.writeFileSync(targetFile, componentContent)
+      console.log(`${colors.green}✅ Generated ${component.name} component${colors.reset}`)
+    }
   }
 }
 
@@ -1851,6 +3078,22 @@ import { ethers } from 'ethers'
 import { NetworkManager } from './networkManager'
 import toast from 'react-hot-toast'
 
+// Contract Configuration
+const CONTRACT_ADDRESSES = {
+  20: {
+    BRIDGE_CONTRACT: '0x0000000000000000000000000000000000000001',
+    TOKEN_CONTRACT: '0x0000000000000000000000000000000000000002',
+    DEFI_CONTRACT: '0x0000000000000000000000000000000000000003',
+    ROUTER_CONTRACT: '0x0000000000000000000000000000000000000004'
+  },
+  21: {
+    BRIDGE_CONTRACT: '0x0000000000000000000000000000000000000001',
+    TOKEN_CONTRACT: '0x0000000000000000000000000000000000000002',
+    DEFI_CONTRACT: '0x0000000000000000000000000000000000000003',
+    ROUTER_CONTRACT: '0x0000000000000000000000000000000000000004'
+  }
+}
+
 // Kadena Chainweb EVM Network Configuration
 const KADENA_NETWORKS = {
   20: {
@@ -1859,10 +3102,7 @@ const KADENA_NETWORKS = {
     wsRpc: 'wss://erpc.testnet.chainweb.com/chain-20',
     name: 'Chain 20',
     explorer: 'https://explorer.testnet.chainweb.com/chain-20',
-    contracts: {
-      bridge: process.env.BRIDGE_CONTRACT_20,
-      router: process.env.ROUTER_CONTRACT_20
-    }
+    contracts: CONTRACT_ADDRESSES[20]
   },
   21: {
     chainId: 5921,
