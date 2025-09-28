@@ -1,0 +1,113 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+@layer base {
+  /* CSS Variables: Light Theme */
+  :root {
+    --color-bg: #f8fafc; /* slate-50 */
+    --color-card-bg: #ffffff;
+    --color-text-primary: #1e293b; /* slate-800 */
+    --color-text-secondary: #475569; /* slate-600 */
+    --color-text-muted: #64748b; /* slate-500 */
+    --color-border: #e2e8f0; /* slate-200 */
+    --color-accent: #22c55e; /* green-500 */
+  }
+
+  /* Global styles */
+  * {
+    @apply box-border m-0 p-0;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply min-h-screen leading-relaxed;
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+  }
+}
+
+@layer components {
+  /* Feature cards and general cards */
+  .feature-card {
+    @apply bg-white p-6 rounded-lg border border-slate-200 transition-all duration-200 ease-in-out;
+  }
+  .feature-card:hover {
+    @apply transform -translate-y-1 shadow-md;
+  }
+
+  /* Function cards with professional styling */
+  .function-card-hover {
+    @apply transition-all duration-200 ease-in-out;
+  }
+  .function-card-hover:hover {
+    @apply transform -translate-y-1 shadow-function-card;
+  }
+
+  /* Professional button styling */
+  .btn-primary {
+    @apply px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 border border-slate-300 transition-colors;
+  }
+
+  /* Input styling */
+  .input-primary {
+    @apply px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors;
+  }
+
+  /* Code block styling */
+  .code-block {
+    @apply bg-slate-900 rounded-lg p-4;
+  }
+  .code-block pre {
+    @apply text-slate-100 font-mono text-sm overflow-x-auto m-0;
+  }
+
+  /* Reusable inline code snippet style */
+  .code-inline {
+    @apply bg-slate-100 text-slate-700 font-mono text-sm px-1.5 py-0.5 rounded-md border border-slate-200;
+  }
+
+  /* Card container styling */
+  .card-container {
+    @apply bg-white rounded-2xl shadow-swagger border border-slate-200 overflow-hidden;
+  }
+
+  /* Header styling */
+  .header-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+}
+
+@layer utilities {
+  /* Text gradient utility */
+  .text-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Custom scrollbar for a consistent look */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-border);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1; /* slate-300 */
+    @apply rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8; /* slate-400 */
+  }
+}
