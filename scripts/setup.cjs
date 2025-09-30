@@ -39,8 +39,8 @@ const coreFunctions = [
     description: 'Transfer tokens between selected chains',
     contractRequired: true,
     contracts: {
-      bridge: 'process.env.BRIDGE_CONTRACT_${chain}',
-      token: 'process.env.TOKEN_CONTRACT_${chain}'
+      bridge: '0x...',
+      token: '0x...'
     }
   },
   {
@@ -53,7 +53,7 @@ const coreFunctions = [
     description: 'Get balances across all selected chains',
     contractRequired: true,
     contracts: {
-      token: 'process.env.TOKEN_CONTRACT_${chain}'
+      token: '0x...'
     }
   }
 ]
@@ -64,8 +64,8 @@ const defiFunctions = [
     description: 'Add liquidity across multiple chains',
     contractRequired: true,
     contracts: {
-      defi: 'process.env.DEFI_CONTRACT_${chain}',
-      token: 'process.env.TOKEN_CONTRACT_${chain}'
+      defi: '0x...',
+      token: '0x...'
     }
   },
   {
@@ -73,8 +73,8 @@ const defiFunctions = [
     description: 'Execute arbitrage opportunities',
     contractRequired: true,
     contracts: {
-      router: 'process.env.ROUTER_CONTRACT_${chain}',
-      defi: 'process.env.DEFI_CONTRACT_${chain}'
+      router: '0x...',
+      defi: '0x...'
     }
   },
   {
@@ -82,8 +82,8 @@ const defiFunctions = [
     description: 'Yield farming across chains',
     contractRequired: true,
     contracts: {
-      defi: 'process.env.DEFI_CONTRACT_${chain}',
-      token: 'process.env.TOKEN_CONTRACT_${chain}'
+      defi: '0x...',
+      token: '0x...'
     }
   },
   {
@@ -91,8 +91,8 @@ const defiFunctions = [
     description: 'Multi-chain lending operations',
     contractRequired: true,
     contracts: {
-      defi: 'process.env.DEFI_CONTRACT_${chain}',
-      token: 'process.env.TOKEN_CONTRACT_${chain}'
+      defi: '0x...',
+      token: '0x...'
     }
   }
 ]

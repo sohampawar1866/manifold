@@ -10,10 +10,10 @@ const CHAIN_CONFIGS = {
     wsRpc: 'wss://erpc.testnet.chainweb.com/chain-20',
     blockExplorer: 'https://explorer.testnet.chainweb.com/chain-20',
     contracts: {
-      router: process.env.ROUTER_CONTRACT_20,
-      factory: process.env.FACTORY_CONTRACT_20,
-      bridge: process.env.BRIDGE_CONTRACT_20,
-      lending: process.env.LENDING_CONTRACT_20
+      router: '0x...',
+      factory: '0x...',
+      bridge: '0x...',
+      lending: '0x...'
     }
   },
   21: {
@@ -23,10 +23,10 @@ const CHAIN_CONFIGS = {
     wsRpc: 'wss://erpc.testnet.chainweb.com/chain-21',
     blockExplorer: 'https://explorer.testnet.chainweb.com/chain-21',
     contracts: {
-      router: process.env.ROUTER_CONTRACT_21,
-      factory: process.env.FACTORY_CONTRACT_21,
-      bridge: process.env.BRIDGE_CONTRACT_21,
-      lending: process.env.LENDING_CONTRACT_21
+      router: '0x...',
+      factory: '0x...',
+      bridge: '0x...',
+      lending: '0x...'
     }
   },
   22: {
@@ -36,10 +36,10 @@ const CHAIN_CONFIGS = {
     wsRpc: 'wss://erpc.testnet.chainweb.com/chain-22',
     blockExplorer: 'https://explorer.testnet.chainweb.com/chain-22',
     contracts: {
-      router: process.env.ROUTER_CONTRACT_22,
-      factory: process.env.FACTORY_CONTRACT_22,
-      bridge: process.env.BRIDGE_CONTRACT_22,
-      lending: process.env.LENDING_CONTRACT_22
+      router: '0x...',
+      factory: '0x...',
+      bridge: '0x...',
+      lending: '0x...'
     }
   },
   23: {

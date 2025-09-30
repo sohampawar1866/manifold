@@ -17,10 +17,10 @@ export const CHAINWEB_EVM_TESTNET_CHAINS = {
     testnet: true,
     icon: 'CHAIN_20',
     contracts: {
-      bridge: process.env.BRIDGE_CONTRACT_20 || '0x...',
-      router: process.env.ROUTER_CONTRACT_20 || '0x...',
-      token: process.env.TOKEN_CONTRACT_20 || '0x...',
-      defi: process.env.DEFI_CONTRACT_20 || '0x...'
+      bridge: '0x...',
+      router: '0x...',
+      token: '0x...',
+      defi: '0x...'
     }
   },
   21: {
@@ -38,10 +38,10 @@ export const CHAINWEB_EVM_TESTNET_CHAINS = {
     testnet: true,
     icon: 'CHAIN_21',
     contracts: {
-      bridge: process.env.BRIDGE_CONTRACT_21 || '0x...',
-      router: process.env.ROUTER_CONTRACT_21 || '0x...',
-      token: process.env.TOKEN_CONTRACT_21 || '0x...',
-      defi: process.env.DEFI_CONTRACT_21 || '0x...'
+      bridge: '0x...',
+      router: '0x...',
+      token: '0x...',
+      defi: '0x...'
     }
   },
   22: {
@@ -59,10 +59,10 @@ export const CHAINWEB_EVM_TESTNET_CHAINS = {
     testnet: true,
     icon: 'CHAIN_22',
     contracts: {
-      bridge: process.env.BRIDGE_CONTRACT_22 || '0x...',
-      router: process.env.ROUTER_CONTRACT_22 || '0x...',
-      token: process.env.TOKEN_CONTRACT_22 || '0x...',
-      defi: process.env.DEFI_CONTRACT_22 || '0x...'
+      bridge: '0x...',
+      router: '0x...',
+      token: '0x...',
+      defi: '0x...'
     }
   },
   23: {
