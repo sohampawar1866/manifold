@@ -9,6 +9,7 @@ lerna-debug.log*
 
 node_modules
 gen_manifold
+gen_manifold2
 dist
 dist-ssr
 *.local
